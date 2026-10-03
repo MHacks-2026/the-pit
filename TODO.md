@@ -19,7 +19,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [x] T09 BE+YOU (CC): wire engine into place_order/cancel_order; atomic writes to trade, position, cash, event_log
 - [ ] T10 FE (CU): client subscriptions: live order book and tape
 - [ ] T11 YOU (CC): Market Maker (Avellaneda-Stoikov) pure function + tests
-- [ ] T12 BE (CC): noise trader + runner process connecting N bot identities on timers
+- [x] T12 BE (CC): noise trader + runner process connecting N bot identities on timers
 - [ ] T13 FE (CU): phone trade UI wired (buy/sell, steppers, positions, open orders, cancel)
 - [ ] T14 FE (CU): price chart and 2D depth chart on /screen
 - [ ] T15 PI (DV): isolated: engine test fixtures + property tests

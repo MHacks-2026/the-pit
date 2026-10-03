@@ -3,13 +3,13 @@
 Install the SpacetimeDB CLI and run `pnpm install` first. Start `spacetime start` in a separate terminal, then from the repository root:
 
 ```sh
-spacetime publish the-pit-local --module-path spacetimedb/spacetimedb --server local --anonymous --yes
+spacetime publish the-pit-local --module-path spacetimedb/spacetimedb --server local --yes
 spacetime generate --lang typescript --out-dir packages/bindings/src --module-path spacetimedb/spacetimedb --yes
 spacetime call the-pit-local join '"Ada"' --server local --anonymous --yes
 spacetime sql the-pit-local 'SELECT * FROM account' --server local --anonymous --yes
 ```
 
-`join` uses the caller identity. Admin calls require the identity that published the database. Register each bot identity from that identity; a bot's own connection credentials must remain outside Git.
+`join` uses the caller identity. Admin calls require the identity that published the database. Set `ADMIN_TOKEN` for the runner to that publisher's token. Register each bot identity from that identity; a bot's own connection credentials must remain outside Git.
 
 ```sh
 spacetime call the-pit-local place_order 1 '"buy"' 100 2 '"GTC"' --server local --yes
