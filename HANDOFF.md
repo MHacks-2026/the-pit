@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T29 prep, D8] Cop negative-control fixture, Claude Code -> next
+Branch: main (base 320606b)
+Done: packages/bots/fixtures/mm-negative-control.json: 60 s, seed 2, MM + noise-1..3 (runner default), no spoofer. 465 CopEvents (orders, cancels, trades, self_trade_attempt); detectSpoofing returns [] at every 500 ms step. negativeControl.test.ts guards this and checks the fixture stays deterministic. Sim moved to sim.testutil.ts (shared with spoofer.test.ts) and now keeps self_trade_attempt events. D8 records the FinTech track.
+Not done / next: T29 harness (N sessions, precision/recall). MM gets only ~1 fill/min: cancel-all + requote every second puts it behind older noise orders at the same prices. Consider keeping unchanged quotes (runner and sim). The runner's noise GTCs are never cancelled and will hit the 20-open-order limit.
+Gotchas: Fixture is a vitest file snapshot; regenerate with `pnpm exec vitest run -u packages/bots`. No @types/node, so tests in bots cannot import node:fs.
+How to verify: pnpm test && pnpm build
+Files touched: packages/bots/src/{sim.testutil,negativeControl.test,spoofer.test}.ts, packages/bots/fixtures/, docs/DECISIONS.md, HANDOFF.md
+
+---
+
 ## [T06] 16:45 EDT, Claude chat -> next
 Branch: fe/web-skeleton (merged to main via PR #1, last commit d624c80)
 Done: /join (name form, 1 to 32 chars, 10,000 start cash, Start trading link) and /trade (phone UI: price and qty steppers, Buy/Sell, cash/position/last/bid-ask, open orders with cancel). apps/web/lib/pit-client.ts has a PitClient interface and mockPitClient that enforces the spec risk limits. /screen already existed. Vercel preview checked on all 3 routes.

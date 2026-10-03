@@ -9,3 +9,4 @@ One line per decision, with the reason. Newest at the bottom.
 - D5 Never cut: engine, Market Maker + Noise bots, live sync, phone join, spoofing detector with evidence alert, Try-to-cheat / Beat-the-Cop, README evaluation table.
 - D6 Feature freeze Sunday 6:00 AM. Submit Sunday 10:00 AM (deadline is 12:00 PM).
 - D7 Play money only. No real money or real brokerage data, ever.
+- D8 Track: FinTech (plus Grand Prize). Reason: a live exchange with manipulation surveillance is a fintech product; sponsor prizes stay as in D3.
