@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { mockPitClient } from '../../lib/pit-client';
 
@@ -27,9 +28,12 @@ export default function JoinForm() {
 
   if (joined) {
     return (
-      <p className="join-status" role="status">
-        Welcome, {joined.name}. Starting cash: {joined.cash.toLocaleString('en-US')} play dollars.
-      </p>
+      <div className="join-success">
+        <p className="join-status" role="status">
+          Welcome, {joined.name}. Starting cash: {joined.cash.toLocaleString('en-US')} play dollars.
+        </p>
+        <Link className="join-button" href="/trade">Start trading</Link>
+      </div>
     );
   }
 

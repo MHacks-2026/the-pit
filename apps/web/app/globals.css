@@ -33,3 +33,27 @@ footer { color: #8da4b1; font-size: 14px; text-align: right; }
 .join-button { width: fit-content; border: 1px solid #31515b; border-radius: 100px; background: #173046; color: #9ce8dc; padding: 12px 22px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .join-button:disabled { opacity: .55; cursor: wait; }
 .join-status { color: #c4d0d3; font-size: 19px; }
+
+/* trade page */
+.trade-panel { display: flex; flex-direction: column; gap: 20px; max-width: 520px; }
+.trade-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 0; }
+.trade-stats div { border: 1px solid #26414f; border-radius: 14px; background: #0b1822; padding: 14px 16px; }
+.trade-stats dt { color: #9ce8dc; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.trade-stats dd { margin: 6px 0 0; font-size: 24px; font-weight: 800; }
+.trade-steppers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.stepper { display: flex; flex-direction: column; gap: 8px; }
+.stepper-row { display: flex; align-items: center; gap: 8px; }
+.stepper-button { width: 52px; height: 52px; border: 1px solid #31515b; border-radius: 14px; background: #173046; color: #9ce8dc; font-size: 26px; font-weight: 700; cursor: pointer; }
+.stepper-value { flex: 1; text-align: center; font-size: 28px; font-weight: 800; }
+.trade-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.trade-button { height: 72px; border: 0; border-radius: 18px; font-size: 22px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #071018; cursor: pointer; }
+.trade-buy { background: #49e0bd; }
+.trade-sell { background: #ff8a6b; }
+.trade-button:disabled { opacity: .55; cursor: wait; }
+.trade-orders-title { margin: 8px 0 0; font-size: 18px; }
+.trade-orders { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.trade-order { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #26414f; border-radius: 14px; padding: 12px 14px; background: #0b1822; }
+.order-buy { color: #49e0bd; font-weight: 800; }
+.order-sell { color: #ff8a6b; font-weight: 800; }
+.join-success { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
+a.join-button { display: inline-block; text-decoration: none; }
