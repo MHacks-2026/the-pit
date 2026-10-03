@@ -1,3 +1,6 @@
+// Mock PitClient for the web skeleton (T06). State lives in memory and resets on refresh.
+// Later, swap mockPitClient for a SpacetimeDB-backed client with the same interface.
+
 export interface JoinedAccount {
   name: string;
   cash: number;
