@@ -22,3 +22,14 @@ h1 { margin: 0; font-size: clamp(58px, 9vw, 112px); line-height: .9; letter-spac
 .alert-card time { color: #91a4ae; font-size: 12px; }
 footer { color: #8da4b1; font-size: 14px; text-align: right; }
 @media (max-width: 680px) { .screen { padding: 28px 16px; gap: 28px; } .screen-header { display: block; } .feed-shell { padding: 20px; } .feed-heading { display: block; } .feed-heading > p { margin-bottom: 0; } }
+
+/* join page */
+.join-form { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
+.join-label { color: #9ce8dc; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.join-input { width: 100%; border: 1px solid #31515b; border-radius: 12px; background: #071018; color: #f2f7f9; padding: 14px 16px; font-size: 16px; }
+.join-input:focus { outline: 2px solid #54d7c8; outline-offset: 2px; }
+.join-hint, .join-status { margin: 0; color: #8da4b1; font-size: 14px; line-height: 1.5; }
+.join-error { margin: 0; color: #ffab82; font-size: 14px; }
+.join-button { width: fit-content; border: 1px solid #31515b; border-radius: 100px; background: #173046; color: #9ce8dc; padding: 12px 22px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.join-button:disabled { opacity: .55; cursor: wait; }
+.join-status { color: #c4d0d3; font-size: 19px; }
