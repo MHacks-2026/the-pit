@@ -6,6 +6,3 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all procedure arg schemas
-
-
-\n

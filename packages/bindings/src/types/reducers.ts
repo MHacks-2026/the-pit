@@ -25,5 +25,3 @@ export type CancelAllParams = __Infer<typeof CancelAllReducer>;
 export type CancelOrderParams = __Infer<typeof CancelOrderReducer>;
 export type JoinParams = __Infer<typeof JoinReducer>;
 export type PlaceOrderParams = __Infer<typeof PlaceOrderReducer>;
-
-\n

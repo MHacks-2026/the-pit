@@ -22,4 +22,4 @@ spacetime call the-pit-local admin_settle 1 true --server local --yes
 spacetime call the-pit-local admin_reset_market 1 --server local --yes
 ```
 
-At T05, `place_order`, `cancel_order`, `cancel_all`, `admin_raise_alert`, `admin_settle`, and `admin_reset_market` are deliberate stubs that return a reason. T09 and T21 implement their live paths.
+`place_order`, `cancel_order`, and `cancel_all` are live as of T09. A market IOC uses price `2147483647` for buys or `0` for sells. `admin_raise_alert`, `admin_settle`, and `admin_reset_market` remain stubs until their later tickets.

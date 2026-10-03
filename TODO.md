@@ -16,7 +16,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [ ] T08 PI (CX): /api/narrate stub with template fallback and NARRATOR_ENABLED kill switch
 
 ## Phase 2: core loop (2:15 to 6:00)
-- [ ] T09 BE+YOU (CC): wire engine into place_order/cancel_order; atomic writes to trade, position, cash, event_log
+- [x] T09 BE+YOU (CC): wire engine into place_order/cancel_order; atomic writes to trade, position, cash, event_log
 - [ ] T10 FE (CU): client subscriptions: live order book and tape
 - [ ] T11 YOU (CC): Market Maker (Avellaneda-Stoikov) pure function + tests
 - [ ] T12 BE (CC): noise trader + runner process connecting N bot identities on timers

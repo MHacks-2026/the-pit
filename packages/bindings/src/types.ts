@@ -96,5 +96,3 @@ export const Trade = __t.object("Trade", {
   ts: __t.timestamp(),
 });
 export type Trade = __Infer<typeof Trade>;
-
-\n
