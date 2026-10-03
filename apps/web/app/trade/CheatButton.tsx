@@ -31,6 +31,7 @@ export default function CheatButton({ lastPrice, bestAsk }: { lastPrice: number 
     let failed = false;
     const touch = bestAsk ?? (lastPrice ?? 100) + 1;
     try {
+      await cancelAll(); // start clean: our own old orders would otherwise block the trade as a self-trade
       setStatus('Step 1 of 3: building a fake wall of sell orders…');
       for (let i = 0; i < LAYERS; i++) {
         await placeOrder({ marketId: HACK_MARKET_ID, side: 'sell', price: touch + 1 + i, qty: LAYER_QTY, tif: 'GTC' });
