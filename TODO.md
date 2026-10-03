@@ -11,7 +11,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [x] T03 YOU (CC): engine core: types, limit orders, price-time priority, partial fills
 - [x] T04 YOU (CC): engine: IOC, MARKET, cancel, self-trade prevention, risk rejects + property test
 - [x] T05 BE (CC/CU): Spacetime module: tables, join, stubs; publish; generate bindings
-- [ ] T06 FE (CU): web skeleton: /join, /trade, /screen with mock data behind an interface
+- [x] T06 FE (CU): web skeleton: /join, /trade, /screen with mock data behind an interface
 - [ ] T07 PI (CX): Vercel deploy, env wiring, QR component on /screen
 - [ ] T08 PI (CX): /api/narrate stub with template fallback and NARRATOR_ENABLED kill switch
 
