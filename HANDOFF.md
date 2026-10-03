@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Runner host] 00:45 CEST, Codex -> next
+Branch: main (runner supervision commit eef884f pushed; logon task installed and verified)
+Done: Supervised the cloud runner with 5-second restarts, a local mutex, redacted UTF-8 logs at `.tools/cloud-runner.log`, and safe connection errors. Installed `ThePitCloudRunner` under Shafir's Windows user at logon. Stopped the manual process and started the task; it is Running and connected five bot identities. The task contains no token. 42 tests and build pass.
+Not done / next: Keep the PC awake and sign in after reboot. Confirm the task runs after a real reboot/logon. Coordinate before any other machine starts a runner.
+Gotchas: The restricted command sandbox cannot reach Maincloud; the installed task can. A logon task does not run before user sign-in. The local mutex cannot stop a runner on another machine.
+How to verify: `Get-ScheduledTask -TaskName ThePitCloudRunner`; `Get-ScheduledTaskInfo -TaskName ThePitCloudRunner`; `Get-Content .tools/cloud-runner.log -Tail 20`; `pnpm test`; `pnpm build`.
+Files touched: apps/runner/src/index.ts, scripts/run-cloud-runner.ps1, scripts/install-runner-task.ps1, docs/RUNNER.md, HANDOFF.md.
+
+---
+
 ## [Runner restart] 00:17 CEST, Codex -> next
 Branch: main (pushed, last code commit cb00970)
 Done: Restarted one runner on Shafir's Windows machine against cloud database `the-pit-mhacks-2026` (`wss://maincloud.spacetimedb.com`). Five bot identities connected and cloud trade count rose from 48 to over 300. Fixed open-order rejects so a single bot cannot stop a tick; noise bots clear stale orders near the cap. Added `scripts/run-cloud-runner.ps1`, which obtains the CLI login token without printing it and rejects a second local instance. Merged T29 evaluation; 42 tests and build pass.
