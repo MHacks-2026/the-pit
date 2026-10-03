@@ -36,7 +36,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [ ] T22 PI (CX/CC): LLM explanation from evidence JSON; narrator with ElevenLabs; cache + rate limit
 - [x] T23 FE (CU): Try-to-cheat button (preset layering macro)
 - [ ] T24 PI+FE: join flow polish (QR on Big Screen, starting cash, admin reset-market)
-- [ ] T25 FE (CU): leaderboard (mark-to-market PnL), robot badge for bots
+- [x] T25 FE (CU): leaderboard (mark-to-market PnL), robot badge for bots
 - [ ] T26 ALL: Rehearsal R0 (11:30 PM)
 - [ ] T34 PI (CX): citation card: LLM text from evidence + canvas card + download; template fallback
 - [ ] T35 FE (CU): Beat the Cop: 60 s challenge, evasion score, leaderboard tab

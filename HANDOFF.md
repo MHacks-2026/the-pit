@@ -45,6 +45,16 @@ Files touched: packages/bots/src/{streamSim,streamSim.test,sim.testutil,copStrea
 
 ---
 
+## [T24 QR half, T25] 18:05 EDT, Claude chat -> next
+Branch: fe/qr-join
+Done: /screen has a "Scan to trade" card with a QR code for https://the-pit-seven.vercel.app/join (static apps/web/public/join-qr.svg, no new dependency; checked that it decodes to that URL). T25 ticked: the leaderboard (cash + position at mid, PnL vs 10,000, robot badge) was built in T10/T20.
+Not done / next: T24 starting-cash display and admin reset-market button (not mine); T35 Beat the Cop. If the production URL changes, the QR must be regenerated.
+Gotchas: QR encodes the production URL, not the preview. Bots and Cop alerts only show when the runner and Cop are running against the live database.
+How to verify: pnpm --filter web build, open /screen, scan the code with a phone
+Files touched: apps/web/public/join-qr.svg (new), apps/web/app/screen/page.tsx, apps/web/app/globals.css (appended), TODO.md, HANDOFF.md
+
+---
+
 ## [T23, T14] 17:50 EDT, Claude chat -> next
 Branch: fe/t14-depth (T23 already merged to main as fe/t23-cheat)
 Done: T23: /trade has a red "Try to cheat" button (app/trade/CheatButton.tsx). It cancel_all first, then places 4 sell GTC layers (20 each) behind the best ask, waits 1 s, buys 2 IOC at the best ask, waits 1 s, cancel_all (always runs, even on error). Same shape as layeringMacro. Checked on the preview: wall appears, ask moves, wall disappears. T14: /screen has a "Market depth" card (app/screen/DepthChart.tsx): cumulative buy/sell steps from the full book.

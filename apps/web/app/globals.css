@@ -92,3 +92,15 @@ a.join-button { display: inline-block; text-decoration: none; }
 .depth-bid { fill: rgba(73, 224, 189, .35); stroke: #49e0bd; stroke-width: 2; }
 .depth-ask { fill: rgba(255, 138, 107, .35); stroke: #ff8a6b; stroke-width: 2; }
 .depth-axis { display: flex; justify-content: space-between; margin: 6px 0 0; color: #8da4b1; font-size: 14px; }
+
+/* join card (QR) */
+.join-card { display: flex; align-items: center; gap: 36px; flex-wrap: wrap; }
+.join-qr-frame { padding: 14px; border: 1px solid #2f5566; border-radius: 22px; background: linear-gradient(160deg, #12303d, #0b1822); box-shadow: 0 0 0 6px rgba(84, 215, 200, .06); }
+.join-qr { display: block; width: 220px; height: 220px; padding: 14px; background: #fff; border-radius: 14px; image-rendering: pixelated; }
+.join-copy { display: flex; flex-direction: column; gap: 12px; min-width: 260px; flex: 1; }
+.join-copy h2 { margin: 0; }
+.join-lede { margin: 0; color: #b9cbd4; font-size: 17px; line-height: 1.5; max-width: 46ch; }
+.join-steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.join-steps li { display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 600; }
+.join-steps li span { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #54d7c8; color: #9ce8dc; font-size: 14px; font-weight: 800; flex: none; }
+.join-url { align-self: flex-start; margin: 4px 0 0; padding: 8px 14px; border: 1px solid #26414f; border-radius: 999px; background: #0b1822; color: #9ce8dc; font-size: 15px; letter-spacing: .02em; }
