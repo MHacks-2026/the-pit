@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { reducers, tables } from '@the-pit/bindings';
 import { HACK_MARKET_ID, LiveProvider } from '../../lib/live';
+import BeatTheCop from './BeatTheCop';
 import CheatButton from './CheatButton';
 
 const MAX_ORDER_QTY = 50;
@@ -85,6 +86,8 @@ function TradeInner() {
     }
   }
 
+  const mid = view.bestBid !== null && view.bestAsk !== null ? (view.bestBid + view.bestAsk) / 2 : (view.lastPrice ?? 100);
+
   if (connectionError) {
     return <p className="join-error" role="alert">Could not reach the exchange. Check your connection and refresh.</p>;
   }
@@ -154,6 +157,8 @@ function TradeInner() {
       )}
 
       <CheatButton lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
+
+      <BeatTheCop myHex={myHex ?? ''} cash={Number(view.me.cash)} position={view.position} mid={mid} />
     </div>
   );
 }

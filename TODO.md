@@ -39,7 +39,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [x] T25 FE (CU): leaderboard (mark-to-market PnL), robot badge for bots
 - [ ] T26 ALL: Rehearsal R0 (11:30 PM)
 - [ ] T34 PI (CX): citation card: LLM text from evidence + canvas card + download; template fallback
-- [ ] T35 FE (CU): Beat the Cop: 60 s challenge, evasion score, leaderboard tab
+- [x] T35 FE (CU): Beat the Cop: 60 s challenge, evasion score, leaderboard tab
 
 ## Phase 5/6: hardening and wow (midnight to 6:00 AM)  -> G3 at 12:00 AM
 - [ ] T27 PI+BE: event markets (2 binary) + admin settle; voice polish, mute, fallbacks

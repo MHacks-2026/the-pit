@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { DbConnection, tables } from '@the-pit/bindings';
+import { COP_PENALTY } from '../../lib/copScore';
 import DepthChart from './DepthChart';
 
 const HACK_MARKET_ID = 1;
@@ -29,6 +30,7 @@ function Board() {
   const [trades] = useTable(tables.trade);
   const [accounts] = useTable(tables.account);
   const [positions] = useTable(tables.position);
+  const [alerts] = useTable(tables.alert);
 
   const view = useMemo(() => {
     const open = orders.filter(o => o.marketId === HACK_MARKET_ID && o.status === 'open' && o.remaining > 0);
@@ -69,8 +71,24 @@ function Board() {
       .sort((a, b) => b.net - a.net)
       .slice(0, 10);
 
-    return { allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard };
-  }, [orders, trades, accounts, positions]);
+    const caughtBy = new Map<string, number>();
+    for (const al of alerts) {
+      const key = al.owner.toHexString();
+      caughtBy.set(key, (caughtBy.get(key) ?? 0) + 1);
+    }
+    const copBoard = accounts
+      .filter(a => !a.isBot)
+      .map(a => {
+        const key = a.identity.toHexString();
+        const caught = caughtBy.get(key) ?? 0;
+        const net = Number(a.cash) + (qtyByOwner.get(key) ?? 0) * mid;
+        return { key, name: a.name || `Trader ${key.slice(0, 6)}`, caught, score: Math.round(net - START_CASH - COP_PENALTY * caught) };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    return { copBoard, allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard };
+  }, [orders, trades, accounts, positions, alerts]);
 
   if (connectionError) {
     return <p className="feed-state" role="alert">The live market is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
@@ -79,7 +97,7 @@ function Board() {
     return <p className="feed-state" role="status">Connecting to the live market…</p>;
   }
 
-  const { allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard } = view;
+  const { copBoard, allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard } = view;
   const spread = bestBid !== null && bestAsk !== null ? bestAsk - bestBid : null;
 
   let chartPoints = '';
@@ -172,6 +190,23 @@ function Board() {
             })}
           </ol>
         )}
+      </section>
+
+      <section className="board-card" aria-label="Beat the Cop">
+        <h3>Beat the Cop</h3>
+        {copBoard.length === 0 ? <p className="board-sub">No players yet.</p> : (
+          <ol className="board-list">
+            {copBoard.map((row, i) => (
+              <li className="rank-row" key={row.key}>
+                <span className="rank-n">{i + 1}</span>
+                <span>{row.name}</span>
+                <span className={row.score >= 0 ? 'rank-up' : 'rank-down'}>{row.score >= 0 ? '+' : ''}{fmt(row.score)}</span>
+                <span className="rank-n">caught {row.caught}×</span>
+              </li>
+            ))}
+          </ol>
+        )}
+        <p className="board-sub">Profit minus {COP_PENALTY} per Cop alert. Humans only.</p>
       </section>
     </div>
   );
