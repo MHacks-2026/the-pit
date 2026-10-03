@@ -69,8 +69,24 @@ console.info(`Runner connected ${bots.size} bot identities to ${database}`);
 let world: WorldState = { fundamental: 100, now: clock() };
 const pendingNews: ReturnType<typeof worldNews>[] = [];
 const pendingAlerts = new Set<string>();
+const lastBotError = new Map<string, string>();
 let lastNews = world.now;
 let busy = false;
+
+async function placeBotOrder(name: string, bot: DbConnection, order: NonNullable<ReturnType<typeof noiseOrder>> | null): Promise<void> {
+  if (!order) return;
+  try {
+    const owner = bot.identity!.toHexString();
+    const openCount = [...bot.db.order.iter()].filter(row => row.owner.toHexString() === owner && row.status === 'open').length;
+    if (openCount >= 18) await bot.reducers.cancelAll({});
+    await bot.reducers.placeOrder({ marketId: order.marketId, side: order.side, price: order.price, qty: order.qty, tif: order.tif });
+    lastBotError.delete(name);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (lastBotError.get(name) !== message) console.warn(`${name} order rejected: ${message}`);
+    lastBotError.set(name, message);
+  }
+}
 
 async function scanCop(now: number): Promise<void> {
   const events = [...admin.db.eventLog.iter()]
@@ -131,18 +147,22 @@ async function tick(): Promise<void> {
     const mm = bots.get('market-maker')!;
     const mmOwner = mm.identity!.toHexString();
     const inventory = [...mm.db.position.iter()].find(row => row.owner.toHexString() === mmOwner && row.marketId === 1)?.qty ?? 0;
-    await mm.reducers.cancelAll({});
-    for (const quote of marketMakerQuotes({ marketId: 1, owner: mmOwner, midPrice: snapshot.midPrice, inventory })) {
-      await mm.reducers.placeOrder({ marketId: quote.marketId, side: quote.side, price: quote.price, qty: quote.qty, tif: quote.tif });
+    try {
+      await mm.reducers.cancelAll({});
+      for (const quote of marketMakerQuotes({ marketId: 1, owner: mmOwner, midPrice: snapshot.midPrice, inventory })) {
+        await placeBotOrder('market-maker', mm, quote);
+      }
+    } catch (error) {
+      console.warn('market-maker refresh failed:', error instanceof Error ? error.message : String(error));
     }
     for (let i = 1; i <= botCount; i++) {
       const bot = bots.get(`noise-${i}`)!;
       const next = noiseOrder({ marketId: 1, owner: bot.identity!.toHexString(), ...snapshot, elapsedMs: 1000 }, rng);
-      if (next) await bot.reducers.placeOrder({ marketId: next.marketId, side: next.side, price: next.price, qty: next.qty, tif: next.tif });
+      await placeBotOrder(`noise-${i}`, bot, next);
     }
     const informed = bots.get('informed')!;
     const next = informedOrder({ marketId: 1, owner: informed.identity!.toHexString(), fundamental: world.fundamental, ...snapshot });
-    if (next) await informed.reducers.placeOrder({ marketId: next.marketId, side: next.side, price: next.price, qty: next.qty, tif: next.tif });
+    await placeBotOrder('informed', informed, next);
   } catch (error) {
     console.error('Runner tick failed:', error instanceof Error ? error.message : String(error));
   } finally {
