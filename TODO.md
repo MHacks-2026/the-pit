@@ -44,7 +44,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 ## Phase 5/6: hardening and wow (midnight to 6:00 AM)  -> G3 at 12:00 AM
 - [ ] T27 PI+BE: event markets (2 binary) + admin settle; voice polish, mute, fallbacks
 - [ ] T28 BE (CC): load test (20 simulated clients + bots); reconnect handling
-- [ ] T29 YOU (CC): evaluation harness: N sessions with/without spoofer; precision and recall; MM negative control
+- [x] T29 YOU (CC): evaluation harness: N sessions with/without spoofer; precision and recall; MM negative control
 - [ ] T30/T36 FE+YOU: phantomScore + 3D X-ray with 2D fallback (1 to 4 AM)
 - [ ] T31 YOU: extra detectors + LLM persona trader (only if everything is green)
 - [ ] T32 BE: error boundaries, rate limits, kill switches, replay mode for Big Screen
