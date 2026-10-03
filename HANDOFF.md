@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T35] 20:00 EDT, Claude chat -> next
+Branch: fe/t35-beat-cop
+Done: Beat the Cop. /trade has a 60 s challenge panel (app/trade/BeatTheCop.tsx): Start, countdown, live profit/caught/score, final result. Score = profit (cash + position at mid) minus 500 per Cop alert raised against you during the 60 s (alert count read from the alert table). /screen has a "Beat the Cop" card (humans only): profit vs 10,000 minus 500 per alert (all time), top 5, "caught N x". Penalty lives in apps/web/lib/copScore.ts. No backend changes.
+Not done / next: needs the Cop running against the live DB, otherwise nobody is ever "caught" and the score is just profit. Leaderboard "tab" is a card, not a tab. T30/T36 3D X-ray is next if time (cut first).
+Gotchas: Score uses the mid price for the open position, so it moves with the market. The all-time /screen score is not reset per challenge.
+How to verify: pnpm --filter web build, join on a preview, press Start the challenge on /trade, use Try to cheat, watch the Beat the Cop card on /screen
+Files touched: apps/web/app/trade/{BeatTheCop,TradePanel}.tsx, apps/web/app/screen/MarketBoard.tsx, apps/web/lib/copScore.ts (new), apps/web/app/globals.css (appended), TODO.md, HANDOFF.md
+
+---
+
 ## [Runner host] 00:45 CEST, Codex -> next
 Branch: main (runner supervision commit eef884f pushed; logon task installed and verified)
 Done: Supervised the cloud runner with 5-second restarts, a local mutex, redacted UTF-8 logs at `.tools/cloud-runner.log`, and safe connection errors. Installed `ThePitCloudRunner` under Shafir's Windows user at logon. Stopped the manual process and started the task; it is Running and connected five bot identities. The task contains no token. 42 tests and build pass.

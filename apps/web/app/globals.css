@@ -104,3 +104,12 @@ a.join-button { display: inline-block; text-decoration: none; }
 .join-steps li { display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 600; }
 .join-steps li span { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #54d7c8; color: #9ce8dc; font-size: 14px; font-weight: 800; flex: none; }
 .join-url { align-self: flex-start; margin: 4px 0 0; padding: 8px 14px; border: 1px solid #26414f; border-radius: 999px; background: #0b1822; color: #9ce8dc; font-size: 15px; letter-spacing: .02em; }
+
+/* beat the cop */
+.cop-box { margin-top: 18px; padding-top: 18px; border-top: 1px solid #26414f; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.cop-button { border: 2px solid #54d7c8; border-radius: 14px; background: transparent; color: #9ce8dc; font-size: 18px; font-weight: 800; padding: 14px 22px; cursor: pointer; }
+.cop-button:disabled { opacity: .7; cursor: default; }
+.cop-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0; width: 100%; }
+.cop-stats div { border: 1px solid #26414f; border-radius: 14px; padding: 12px; background: #0b1822; }
+.cop-stats dt { color: #8da4b1; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
+.cop-stats dd { margin: 6px 0 0; font-size: 24px; font-weight: 800; }
