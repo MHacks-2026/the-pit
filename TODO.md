@@ -8,8 +8,8 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [ ] T02 YOU: confirm docs/spec.md, create demo-script draft, hand out first prompts (docs/PROMPTS.md)
 
 ## Phase 1: contracts and skeleton (12:15 to 2:15)  -> G1
-- [ ] T03 YOU (CC): engine core: types, limit orders, price-time priority, partial fills
-- [ ] T04 YOU (CC): engine: IOC, MARKET, cancel, self-trade prevention, risk rejects + property test
+- [x] T03 YOU (CC): engine core: types, limit orders, price-time priority, partial fills
+- [x] T04 YOU (CC): engine: IOC, MARKET, cancel, self-trade prevention, risk rejects + property test
 - [x] T05 BE (CC/CU): Spacetime module: tables, join, stubs; publish; generate bindings
 - [ ] T06 FE (CU): web skeleton: /join, /trade, /screen with mock data behind an interface
 - [ ] T07 PI (CX): Vercel deploy, env wiring, QR component on /screen
