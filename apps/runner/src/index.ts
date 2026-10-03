@@ -48,10 +48,10 @@ async function connect(name: string, token?: string): Promise<DbConnection> {
         }
         connection.subscriptionBuilder()
           .onApplied(() => resolveConnection(connection))
-          .onError(error => reject(error))
+          .onError(() => reject(new Error(`${name} subscription failed`)))
           .subscribeToAllTables();
       })
-      .onConnectError(reject);
+      .onConnectError(() => reject(new Error(`${name} connection failed to ${database}`)));
     builder.build();
   });
 }
