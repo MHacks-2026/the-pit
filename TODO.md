@@ -18,7 +18,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 ## Phase 2: core loop (2:15 to 6:00)
 - [x] T09 BE+YOU (CC): wire engine into place_order/cancel_order; atomic writes to trade, position, cash, event_log
 - [ ] T10 FE (CU): client subscriptions: live order book and tape
-- [ ] T11 YOU (CC): Market Maker (Avellaneda-Stoikov) pure function + tests
+- [x] T11 YOU (CC): Market Maker (Avellaneda-Stoikov) pure function + tests
 - [x] T12 BE (CC): noise trader + runner process connecting N bot identities on timers
 - [ ] T13 FE (CU): phone trade UI wired (buy/sell, steppers, positions, open orders, cancel)
 - [ ] T14 FE (CU): price chart and 2D depth chart on /screen
@@ -26,9 +26,9 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [ ] T16 BE: attend the Spacetime workshop (~5 PM, confirm) and post 3 tips
 
 ## Phase 3: Cop v1 and Big Screen (6:00 to 8:00)  -> G2
-- [ ] T17 YOU (CC)+BE: world simulator (hidden fundamental + jumps), news rows, informed bot
+- [x] T17 YOU (CC)+BE: world simulator (hidden fundamental + jumps), news rows, informed bot
 - [ ] T18 YOU (CC): Cop: feature extraction + spoofing detector + synthetic stream tests (MM must NOT be flagged)
-- [ ] T19 YOU (CC): Spoofer bot (layer, trade opposite side, cancel)
+- [x] T19 YOU (CC): Spoofer bot (layer, trade opposite side, cancel)
 - [ ] T20 FE (CU): Big Screen layout: book, tape, chart, alert feed, leaderboard shell
 
 ## Phase 4: integration (8:00 PM to midnight)

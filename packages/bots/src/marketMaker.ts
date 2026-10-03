@@ -1,214 +1,47 @@
-import {
-  Observation,
-  Action,
-  StrategyResult,
-} from "./types";
+import type { NewOrder } from './types';
 
-export type MarketMakerParams = {
-  gamma: number;
-  k: number;
-  volatilityWindow: number;
-  tickSize: number;
-  maxInventory: number;
-  requoteThreshold: number;
-  orderSize: number;
-};
-
-export type MarketMakerState = {
-  midHistory: number[];
-
-  lastBidPrice?: number;
-  lastAskPrice?: number;
-};
-
-function calculateVolatility(prices: number[]): number {
-  if (prices.length < 2) {
-    return 0;
-  }
-
-  const returns: number[] = [];
-
-  for (let i = 1; i < prices.length; i++) {
-    const previous = prices[i - 1];
-    const current = prices[i];
-
-    if (previous === 0) {
-      continue;
-    }
-
-    returns.push((current - previous) / previous);
-  }
-
-  if (returns.length === 0) {
-    return 0;
-  }
-
-  const mean =
-    returns.reduce((sum, x) => sum + x, 0) / returns.length;
-
-  const variance =
-    returns.reduce(
-      (sum, x) => sum + (x - mean) ** 2,
-      0
-    ) / returns.length;
-
-  return Math.sqrt(variance);
+/** Sample std-dev of mid-price changes, in ticks per sqrt(second). Feed it recent mids sampled every dtSeconds. */
+export function sigmaTicks(mids: readonly number[], tick = 1, dtSeconds = 1): number {
+  if (mids.length < 3 || tick <= 0 || dtSeconds <= 0) return 0;
+  const d: number[] = [];
+  for (let i = 1; i < mids.length; i++) d.push((mids[i] - mids[i - 1]) / tick);
+  const mean = d.reduce((a, b) => a + b, 0) / d.length;
+  const variance = d.reduce((a, x) => a + (x - mean) ** 2, 0) / (d.length - 1);
+  return Math.sqrt(variance / dtSeconds);
 }
 
-function reservationPrice(
-  mid: number,
-  inventory: number,
-  gamma: number,
-  volatility: number
-): number {
-  return mid - inventory * gamma * volatility ** 2;
+export interface QuoteInput {
+  marketId: number;
+  owner: string;
+  midPrice: number;
+  inventory: number;
+  /** Volatility in ticks; pass sigmaTicks(recentMids). */
+  sigma?: number;
+  gamma?: number;
+  k?: number;
+  secondsToClose?: number;
+  inventoryCap?: number;
+  qty?: number;
+  tick?: number;
 }
 
-function calculateSpread(
-  gamma: number,
-  k: number,
-  volatility: number
-): number {
-  return (
-    gamma * volatility ** 2 +
-    (2 / gamma) * Math.log(1 + gamma / k)
-  );
-}
-
-function roundToTick(
-  price: number,
-  tickSize: number
-): number {
-  return Math.round(price / tickSize) * tickSize;
-}
-
-function shouldRequote(
-  newBid: number,
-  newAsk: number,
-  state: MarketMakerState,
-  threshold: number
-): boolean {
-  if (
-    state.lastBidPrice === undefined ||
-    state.lastAskPrice === undefined
-  ) {
-    return true;
-  }
-
-  const bidMoved =
-    Math.abs(newBid - state.lastBidPrice) >= threshold;
-
-  const askMoved =
-    Math.abs(newAsk - state.lastAskPrice) >= threshold;
-
-  return bidMoved || askMoved;
-}
-
-export function marketMaker(
-  obs: Observation,
-  params: MarketMakerParams,
-  state: MarketMakerState
-): StrategyResult<MarketMakerState> {
-
-  const mid = obs.book.midPrice;
-
-  const nextState: MarketMakerState = {
-    ...state,
-    midHistory: [...state.midHistory, mid],
-  };
-
-  if (
-    nextState.midHistory.length >
-    params.volatilityWindow
-  ) {
-    nextState.midHistory.shift();
-  }
-
-  const volatility =
-    calculateVolatility(nextState.midHistory);
-
-  const reservation =
-    reservationPrice(
-      mid,
-      obs.me.position,
-      params.gamma,
-      volatility
-    );
-
-  const spread =
-    calculateSpread(
-      params.gamma,
-      params.k,
-      volatility
-    );
-
-  const bidPrice =
-    roundToTick(
-      reservation - spread,
-      params.tickSize
-    );
-
-  const askPrice =
-    roundToTick(
-      reservation + spread,
-      params.tickSize
-    );
-
-  const actions: Action[] = [];
-
-  const requote = shouldRequote(
-    bidPrice,
-    askPrice,
-    nextState,
-    params.requoteThreshold
-  );
-
-  if (!requote) {
-    return {
-      actions,
-      state: nextState
-    };
-  }
-
-  // Cancel existing market-maker orders.
-  for (const order of obs.me.openOrders) {
-    if (order.tag === "market-maker") {
-      actions.push({
-        kind: "cancel",
-        orderId: order.id
-      });
-    }
-  }
-
-  // Place bid if inventory allows.
-  if (obs.me.position < params.maxInventory) {
-    actions.push({
-      kind: "place",
-      side: "BUY",
-      price: bidPrice,
-      qty: params.orderSize,
-      type: "LIMIT",
-      tag: "market-maker"
-    });
-  }
-
-  // Place ask if inventory allows.
-  if (obs.me.position > -params.maxInventory) {
-    actions.push({
-      kind: "place",
-      side: "SELL",
-      price: askPrice,
-      qty: params.orderSize,
-      type: "LIMIT",
-      tag: "market-maker"
-    });
-  }
-
-  nextState.lastBidPrice = bidPrice;
-  nextState.lastAskPrice = askPrice;
-
-  return {
-    actions,
-    state: nextState
-  };
+/**
+ * Avellaneda-Stoikov quotes.
+ * Reservation r = s - q*gamma*sigma^2*(T-t); total spread = gamma*sigma^2*(T-t) + (2/gamma)ln(1+gamma/k),
+ * split evenly around r. Bid rounds down and ask rounds up to the tick, so quotes never cross.
+ */
+export function marketMakerQuotes(input: QuoteInput): NewOrder[] {
+  const { gamma = 0.1, k = 1.5, sigma = 0.8, secondsToClose = 1, inventoryCap = 40, qty = 5, tick = 1 } = input;
+  if (!Number.isSafeInteger(input.midPrice) || input.midPrice < 1 || tick < 1 || !Number.isSafeInteger(tick) ||
+    gamma <= 0 || k <= 0 || sigma < 0 || secondsToClose < 0 || !Number.isSafeInteger(input.inventory)) return [];
+  const risk = gamma * sigma * sigma * secondsToClose;
+  const reservation = input.midPrice - input.inventory * risk;
+  const halfSpread = (risk + (2 / gamma) * Math.log(1 + gamma / k)) / 2;
+  const bid = Math.max(tick, Math.floor((reservation - halfSpread) / tick) * tick);
+  const ask = Math.max(bid + tick, Math.ceil((reservation + halfSpread) / tick) * tick);
+  const size = Math.max(1, Math.min(50, Math.trunc(qty)));
+  const orders: NewOrder[] = [];
+  if (input.inventory < inventoryCap) orders.push({ marketId: input.marketId, owner: input.owner, side: 'buy', price: bid, qty: size, tif: 'GTC' });
+  if (input.inventory > -inventoryCap) orders.push({ marketId: input.marketId, owner: input.owner, side: 'sell', price: ask, qty: size, tif: 'GTC' });
+  return orders;
 }
