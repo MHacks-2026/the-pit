@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T23, T14] 17:50 EDT, Claude chat -> next
+Branch: fe/t14-depth (T23 already merged to main as fe/t23-cheat)
+Done: T23: /trade has a red "Try to cheat" button (app/trade/CheatButton.tsx). It cancel_all first, then places 4 sell GTC layers (20 each) behind the best ask, waits 1 s, buys 2 IOC at the best ask, waits 1 s, cancel_all (always runs, even on error). Same shape as layeringMacro. Checked on the preview: wall appears, ask moves, wall disappears. T14: /screen has a "Market depth" card (app/screen/DepthChart.tsx): cumulative buy/sell steps from the full book.
+Not done / next: confirm the Cop raises an alert from the button (needs the Cop runner against the live DB; not seen yet). T25 polish, T35 Beat the Cop, T30/T36 3D X-ray.
+Gotchas: The button trades as the human's own account, so it needs a joined account. Old open orders are cancelled first to avoid a self-trade.
+How to verify: pnpm --filter web build, then press the button on a preview and watch /screen
+Files touched: apps/web/app/trade/{CheatButton,TradePanel}.tsx, apps/web/app/screen/{DepthChart,MarketBoard}.tsx, apps/web/app/globals.css (appended), TODO.md, HANDOFF.md
+
+---
+
 ## [T13] 17:30 EDT, Claude chat -> next
 Branch: fe/t13-live-trade (merged to main via PR)
 Done: /join and /trade now use the live SpacetimeDB reducers. apps/web/lib/live.tsx (LiveProvider) holds one connection and saves the identity token in localStorage, so /join, /trade and refreshes are the same trader. JoinForm calls join and skips the form if the account already exists. TradePanel reads account, position, order and trade tables; Buy/Sell call place_order (GTC, market 1), Cancel calls cancel_order; reducer errors show in the red line. Checked on the Vercel preview: buy filled, cash updated.

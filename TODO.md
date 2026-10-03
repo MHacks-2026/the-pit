@@ -21,7 +21,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [x] T11 YOU (CC): Market Maker (Avellaneda-Stoikov) pure function + tests
 - [x] T12 BE (CC): noise trader + runner process connecting N bot identities on timers
 - [x] T13 FE (CU): phone trade UI wired (buy/sell, steppers, positions, open orders, cancel)
-- [ ] T14 FE (CU): price chart and 2D depth chart on /screen
+- [x] T14 FE (CU): price chart and 2D depth chart on /screen
 - [ ] T15 PI (DV): isolated: engine test fixtures + property tests
 - [ ] T16 BE: attend the Spacetime workshop (~5 PM, confirm) and post 3 tips
 
@@ -34,7 +34,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 ## Phase 4: integration (8:00 PM to midnight)
 - [x] T21 BE+YOU: Cop runner calls admin_raise_alert; alert feed UI
 - [ ] T22 PI (CX/CC): LLM explanation from evidence JSON; narrator with ElevenLabs; cache + rate limit
-- [ ] T23 FE (CU): Try-to-cheat button (preset layering macro)
+- [x] T23 FE (CU): Try-to-cheat button (preset layering macro)
 - [ ] T24 PI+FE: join flow polish (QR on Big Screen, starting cash, admin reset-market)
 - [ ] T25 FE (CU): leaderboard (mark-to-market PnL), robot badge for bots
 - [ ] T26 ALL: Rehearsal R0 (11:30 PM)

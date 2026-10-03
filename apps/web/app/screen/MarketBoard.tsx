@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { DbConnection, tables } from '@the-pit/bindings';
+import DepthChart from './DepthChart';
 
 const HACK_MARKET_ID = 1;
 const START_CASH = 10_000;
@@ -38,8 +39,10 @@ function Board() {
       }
       return [...byPrice.entries()].map(([price, qty]) => ({ price, qty }));
     };
-    const bids = levelsFor('buy').sort((a, b) => b.price - a.price).slice(0, BOOK_LEVELS);
-    const asks = levelsFor('sell').sort((a, b) => a.price - b.price).slice(0, BOOK_LEVELS);
+    const allBids = levelsFor('buy').sort((a, b) => b.price - a.price);
+    const allAsks = levelsFor('sell').sort((a, b) => a.price - b.price);
+    const bids = allBids.slice(0, BOOK_LEVELS);
+    const asks = allAsks.slice(0, BOOK_LEVELS);
     const bestBid = bids.length ? bids[0].price : null;
     const bestAsk = asks.length ? asks[0].price : null;
     const maxQty = Math.max(1, ...bids.map(l => l.qty), ...asks.map(l => l.qty));
@@ -66,7 +69,7 @@ function Board() {
       .sort((a, b) => b.net - a.net)
       .slice(0, 10);
 
-    return { bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard };
+    return { allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard };
   }, [orders, trades, accounts, positions]);
 
   if (connectionError) {
@@ -76,7 +79,7 @@ function Board() {
     return <p className="feed-state" role="status">Connecting to the live market…</p>;
   }
 
-  const { bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard } = view;
+  const { allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard } = view;
   const spread = bestBid !== null && bestAsk !== null ? bestAsk - bestBid : null;
 
   let chartPoints = '';
@@ -131,6 +134,11 @@ function Board() {
             ))}
           </ol>
         </div>
+      </section>
+
+      <section className="board-card board-wide" aria-label="Depth chart">
+        <h3>Market depth</h3>
+        <DepthChart bids={allBids} asks={allAsks} />
       </section>
 
       <section className="board-card" aria-label="Trade tape">
