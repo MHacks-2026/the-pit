@@ -218,9 +218,25 @@ export const adminRegisterBot = spacetimedb.reducer(
 );
 export const adminRaiseAlert = spacetimedb.reducer(
   { owner: t.identity(), kind: t.string(), score: t.u32(), evidence: t.string(), narration: t.string().optional() },
-  ctx => {
+  (ctx, { owner, kind, score, evidence, narration }) => {
     requireAdmin(ctx);
-    throw new SenderError('alert publishing unavailable until T21');
+    if (kind !== 'spoofing' && kind !== 'quote_stuffing' && kind !== 'wash') throw new SenderError('invalid alert kind');
+    if (score < 70 || score > 100) throw new SenderError('alert score must be 70 to 100');
+    if (!ctx.db.account.identity.find(owner)) throw new SenderError('alert owner not found');
+    if (evidence.length > 4096) throw new SenderError('alert evidence too large');
+    let parsed: Record<string, unknown>;
+    try { parsed = JSON.parse(evidence) as Record<string, unknown>; } catch { throw new SenderError('invalid alert evidence JSON'); }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new SenderError('alert evidence must be an object');
+    if (typeof parsed.incidentKey === 'string') {
+      for (const row of ctx.db.alert.iter()) {
+        if (row.owner.toHexString() !== owner.toHexString() || row.kind !== kind) continue;
+        try {
+          const prior = JSON.parse(row.evidence) as Record<string, unknown>;
+          if (prior.incidentKey === parsed.incidentKey) return;
+        } catch { /* older malformed evidence is ignored */ }
+      }
+    }
+    ctx.db.alert.insert({ id: 0n, owner, kind, score, evidence, narration, ts: ctx.timestamp });
   }
 );
 export const adminPostNews = spacetimedb.reducer({ marketId: t.u32(), text: t.string() }, (ctx, { marketId, text }) => {

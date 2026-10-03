@@ -1,6 +1,7 @@
 node_modules/
 .tools/
 dist/
+.next/
 coverage/
 *.tsbuildinfo
 spacetime.local.json

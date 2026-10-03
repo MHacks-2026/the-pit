@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DbConnection } from '@the-pit/bindings';
 import { informedOrder, marketMakerQuotes, noiseOrder, stepWorld, worldNews, type WorldState } from '@the-pit/bots';
+import { detectSpoofing, parseEventLog } from '@the-pit/cop';
 
 const host = process.env.NEXT_PUBLIC_SPACETIME_URI || 'ws://127.0.0.1:3000';
 const database = process.env.NEXT_PUBLIC_SPACETIME_DB || 'the-pit-local';
@@ -67,8 +68,36 @@ console.info(`Runner connected ${bots.size} bot identities to ${database}`);
 
 let world: WorldState = { fundamental: 100, now: clock() };
 const pendingNews: ReturnType<typeof worldNews>[] = [];
+const pendingAlerts = new Set<string>();
 let lastNews = world.now;
 let busy = false;
+
+async function scanCop(now: number): Promise<void> {
+  const events = [...admin.db.eventLog.iter()]
+    .filter(row => Number(row.ts.microsSinceUnixEpoch / 1000n) >= now - 30_000)
+    .map(row => parseEventLog({ id: Number(row.id), kind: row.kind, marketId: row.marketId, payload: row.payload }))
+    .filter(event => event !== null);
+  const recorded = new Set([...admin.db.alert.iter()].flatMap(row => {
+    try {
+      const evidence = JSON.parse(row.evidence) as { incidentKey?: unknown };
+      return typeof evidence.incidentKey === 'string' ? [evidence.incidentKey] : [];
+    } catch { return []; }
+  }));
+  for (const candidate of detectSpoofing(events, now)) {
+    const key = candidate.evidence.incidentKey;
+    if (recorded.has(key) || pendingAlerts.has(key)) continue;
+    const owner = [...admin.db.account.iter()].find(row => row.identity.toHexString() === candidate.owner);
+    if (!owner) continue;
+    pendingAlerts.add(key);
+    try {
+      await admin.reducers.adminRaiseAlert({ owner: owner.identity, kind: candidate.kind,
+        score: candidate.score, evidence: JSON.stringify(candidate.evidence), narration: undefined });
+    } catch (error) {
+      pendingAlerts.delete(key);
+      throw error;
+    }
+  }
+}
 
 function marketSnapshot() {
   const orders = [...admin.db.order.iter()].filter(row => row.marketId === 1 && row.status === 'open' && row.remaining > 0);
@@ -87,6 +116,7 @@ async function tick(): Promise<void> {
   busy = true;
   try {
     const now = clock();
+    await scanCop(now);
     world = stepWorld(world, now, rng);
     if (now - lastNews >= 10_000) {
       pendingNews.push(worldNews(world, rng));

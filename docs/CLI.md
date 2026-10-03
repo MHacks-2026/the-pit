@@ -22,4 +22,4 @@ spacetime call the-pit-local admin_settle 1 true --server local --yes
 spacetime call the-pit-local admin_reset_market 1 --server local --yes
 ```
 
-`place_order`, `cancel_order`, and `cancel_all` are live as of T09. A market IOC uses price `2147483647` for buys or `0` for sells. `admin_raise_alert`, `admin_settle`, and `admin_reset_market` remain stubs until their later tickets.
+`place_order`, `cancel_order`, and `cancel_all` are live as of T09. A market IOC uses price `2147483647` for buys or `0` for sells. `admin_raise_alert` is live as of T21; the runner supplies a JSON evidence string. `admin_settle` and `admin_reset_market` remain stubs until their later tickets.

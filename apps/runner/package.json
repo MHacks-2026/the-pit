@@ -10,6 +10,7 @@
   "dependencies": {
     "@the-pit/bindings": "workspace:*",
     "@the-pit/bots": "workspace:*",
+    "@the-pit/cop": "workspace:*",
     "spacetimedb": "2.10.*"
   },
   "devDependencies": {
