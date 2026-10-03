@@ -92,3 +92,7 @@ a.join-button { display: inline-block; text-decoration: none; }
 .depth-bid { fill: rgba(73, 224, 189, .35); stroke: #49e0bd; stroke-width: 2; }
 .depth-ask { fill: rgba(255, 138, 107, .35); stroke: #ff8a6b; stroke-width: 2; }
 .depth-axis { display: flex; justify-content: space-between; margin: 6px 0 0; color: #8da4b1; font-size: 14px; }
+
+/* join card (QR) */
+.join-card { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+.join-qr { width: 200px; height: 200px; padding: 12px; background: #fff; border-radius: 16px; image-rendering: pixelated; }

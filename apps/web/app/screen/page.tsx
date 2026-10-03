@@ -22,6 +22,18 @@ export default function Screen() {
         </div>
         <MarketBoard />
       </section>
+      <section className="feed-shell" aria-labelledby="join-heading">
+        <div className="join-card">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="join-qr" src="/join-qr.svg" alt="QR code for the-pit-seven.vercel.app/join" width={200} height={200} />
+          <div>
+            <p className="eyebrow">Your turn</p>
+            <h2 id="join-heading">Scan to trade</h2>
+            <p className="board-sub">Point your phone camera at the code, pick a name and start with 10,000 play dollars.</p>
+            <p className="board-sub">the-pit-seven.vercel.app/join</p>
+          </div>
+        </div>
+      </section>
       <section className="feed-shell" aria-labelledby="alerts-heading">
         <div className="feed-heading">
           <div>
