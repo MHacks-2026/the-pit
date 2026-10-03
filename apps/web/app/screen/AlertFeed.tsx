@@ -1,15 +1,17 @@
 'use client';
 
 import { useMemo } from 'react';
-import { SpacetimeDBProvider, useTable } from 'spacetimedb/react';
+import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { DbConnection, tables } from '@the-pit/bindings';
 
 function FeedContent() {
+  const { connectionError } = useSpacetimeDB();
   const [alerts, alertsReady] = useTable(tables.alert);
   const [accounts] = useTable(tables.account);
   const names = new Map(accounts.map(account => [account.identity.toHexString(), account.name]));
   const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 12);
 
+  if (connectionError) return <p className="feed-state" role="alert">The live alert feed is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
   if (!alertsReady) return <p className="feed-state" role="status">Connecting to the live alert feed…</p>;
   if (!latest.length) return <p className="feed-state" role="status">No alerts yet. The Market Cop is watching the order stream.</p>;
 
@@ -35,8 +37,14 @@ function FeedContent() {
 }
 
 export default function AlertFeed() {
-  const connectionBuilder = useMemo(() => DbConnection.builder()
-    .withUri(process.env.NEXT_PUBLIC_SPACETIME_URI || 'ws://127.0.0.1:3000')
-    .withDatabaseName(process.env.NEXT_PUBLIC_SPACETIME_DB || 'the-pit-local'), []);
+  const uri = process.env.NEXT_PUBLIC_SPACETIME_URI;
+  const database = process.env.NEXT_PUBLIC_SPACETIME_DB;
+  const validUri = uri && (process.env.NODE_ENV !== 'production' || uri.startsWith('wss://'));
+  const connectionBuilder = useMemo(() => validUri && database ? DbConnection.builder()
+    .withUri(uri)
+    .withDatabaseName(database) : null, [uri, database, validUri]);
+  if (!connectionBuilder) {
+    return <p className="feed-state" role="alert">The live alert feed is not configured. Set a public wss:// NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB in Vercel, then redeploy.</p>;
+  }
   return <SpacetimeDBProvider connectionBuilder={connectionBuilder}><FeedContent /></SpacetimeDBProvider>;
 }
