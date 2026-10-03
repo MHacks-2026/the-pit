@@ -112,17 +112,20 @@ export function marketMaker(
 
   const mid = obs.book.midPrice;
 
-  state.midHistory.push(mid);
+  const nextState: MarketMakerState = {
+    ...state,
+    midHistory: [...state.midHistory, mid],
+  };
 
   if (
-    state.midHistory.length >
+    nextState.midHistory.length >
     params.volatilityWindow
   ) {
-    state.midHistory.shift();
+    nextState.midHistory.shift();
   }
 
   const volatility =
-    calculateVolatility(state.midHistory);
+    calculateVolatility(nextState.midHistory);
 
   const reservation =
     reservationPrice(
@@ -156,14 +159,14 @@ export function marketMaker(
   const requote = shouldRequote(
     bidPrice,
     askPrice,
-    state,
+    nextState,
     params.requoteThreshold
   );
 
   if (!requote) {
     return {
       actions,
-      state
+      state: nextState
     };
   }
 
@@ -201,11 +204,11 @@ export function marketMaker(
     });
   }
 
-  state.lastBidPrice = bidPrice;
-  state.lastAskPrice = askPrice;
+  nextState.lastBidPrice = bidPrice;
+  nextState.lastAskPrice = askPrice;
 
   return {
     actions,
-    state
+    state: nextState
   };
 }
