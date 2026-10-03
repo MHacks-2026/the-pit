@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T10, T20] 17:05 EDT, Claude chat -> next
+Branch: fe/big-screen (merged to main via PR)
+Done: /screen now has a "Live market" board (apps/web/app/screen/MarketBoard.tsx): HACK price with line chart, order book (top 8 levels, bid/ask bars), trade tape (last 12), leaderboard (cash + position at mid, robot badge for bots, PnL vs 10,000). Reads order, trade, account, position tables live from SpacetimeDB. Checked on the Vercel preview with bots trading.
+Not done / next: T13 (wire /join and /trade to SpacetimeDB reducers, replacing mockPitClient), T14 (depth chart, better price chart), T23, T35. Chart is flat when price does not move.
+Gotchas: Needs NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB, so localhost shows "not configured"; test on the Vercel preview. MarketBoard has its own SpacetimeDBProvider, like AlertFeed.
+How to verify: pnpm --filter web build, then open /screen on the preview
+Files touched: apps/web/app/screen/{MarketBoard.tsx,page.tsx}, apps/web/app/globals.css (appended), TODO.md, HANDOFF.md
+
+---
+
 ## [T29 prep, D8] Cop fixture streams, Claude Code -> next
 Branch: main (base 320606b)
 Done: packages/cop/fixtures/streams.ts: three 60 s, seed 1 runs of the real bots through matchOrder, as event_log rows (payload = JSON.stringify(EngineEvent)). 1 mmNoiseInformed: 425 rows, 12 MM fills, 0 alerts. 2 fastRequoteMm (MM requotes every 250 ms): 1145 rows, 494 cancels, 0 alerts. 3 withSpoofer: 4 alerts, all SPOOFER_OWNER. copStreams.test.ts generates and guards it. D8 records the FinTech track.
