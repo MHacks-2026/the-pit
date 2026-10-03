@@ -1,4 +1,5 @@
 import AlertFeed from './AlertFeed';
+import MarketBoard from './MarketBoard';
 
 export default function Screen() {
   return (
@@ -11,6 +12,16 @@ export default function Screen() {
         </div>
         <div className="live-pill"><span className="live-dot" /> LIVE MARKET</div>
       </header>
+      <section className="feed-shell" aria-labelledby="market-heading">
+        <div className="feed-heading">
+          <div>
+            <p className="eyebrow">Trading floor</p>
+            <h2 id="market-heading">Live market</h2>
+          </div>
+          <p>Order book, trades and leaderboard, updated live</p>
+        </div>
+        <MarketBoard />
+      </section>
       <section className="feed-shell" aria-labelledby="alerts-heading">
         <div className="feed-heading">
           <div>
