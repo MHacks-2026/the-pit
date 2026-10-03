@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T29 prep] runStream for the evaluation harness, Claude Code -> next
+Branch: main
+Done: packages/bots/src/streamSim.ts exports runStream({ seed, seconds = 60, spoofer = false, mmRequoteMs = 1000 }) -> EventLogRow[], plus SPOOFER_OWNER, STREAM_OWNERS, seeded, StreamExchange. Re-exported from @the-pit/bots. copStreams.test.ts now calls it; packages/cop/fixtures/streams.ts is byte-identical for seed 1.
+Not done / next: T29 harness on top of runStream (N seeds, with/without spoofer, precision/recall).
+Gotchas: EventLogRow is declared in bots with the same shape as the Cop's EventLogInput (no cross-package import), so rows pass straight to parseEventLog. The spoofer uses seeded(seed + 1000). Noise bot count is fixed at 3.
+How to verify: pnpm test && pnpm build
+Files touched: packages/bots/src/{streamSim,streamSim.test,sim.testutil,copStreams.test,index}.ts, HANDOFF.md
+
+---
+
 ## [T23, T14] 17:50 EDT, Claude chat -> next
 Branch: fe/t14-depth (T23 already merged to main as fe/t23-cheat)
 Done: T23: /trade has a red "Try to cheat" button (app/trade/CheatButton.tsx). It cancel_all first, then places 4 sell GTC layers (20 each) behind the best ask, waits 1 s, buys 2 IOC at the best ask, waits 1 s, cancel_all (always runs, even on error). Same shape as layeringMacro. Checked on the preview: wall appears, ask moves, wall disappears. T14: /screen has a "Market depth" card (app/screen/DepthChart.tsx): cumulative buy/sell steps from the full book.

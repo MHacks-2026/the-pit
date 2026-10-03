@@ -1,47 +1,11 @@
 import { describe, expect, it } from 'vitest';
 // Relative import keeps bots free of a new package dependency; swap for '@the-pit/cop' if the integrator adds it.
 import { detectSpoofing, parseEventLog, type CopEvent, type EventLogInput } from '../../cop/src/index';
-import { informedOrder } from './informedTrader';
-import { noiseOrder } from './noiseTrader';
-import { Sim, seeded } from './sim.testutil';
-import { initialSpooferState, spooferStep } from './spoofer';
-import { stepWorld } from './world';
+import { runStream, SPOOFER_OWNER as SPOOFER, STREAM_OWNERS as OWNERS } from './streamSim';
 
 const SEED = 1;
 const SECONDS = 60;
 const FAST_REQUOTE_MS = 250;
-const SPOOFER = 'spoofer';
-// Runner's default bot set (PIT_BOT_COUNT=3).
-const NOISE = ['noise-1', 'noise-2', 'noise-3'];
-const OWNERS = ['mm', ...NOISE, 'informed'];
-
-/** Same loop as apps/runner: one tick per second (world, MM requote, noise, informed), plus optional extras. */
-function session({ requoteMs = 1000, spoofer = false } = {}) {
-  const sim = new Sim([...OWNERS, SPOOFER]);
-  const rng = seeded(SEED);
-  // Own rng so the other bots draw the same numbers with and without the spoofer.
-  const spooferRng = seeded(SEED + 1000);
-  let world = { fundamental: 100, now: 0 };
-  let spoof = initialSpooferState(3000);
-  for (let now = 0; now <= SECONDS * 1000; now += FAST_REQUOTE_MS) {
-    if (now % requoteMs === 0) sim.requoteMaker(now);
-    if (now % 1000 !== 0) continue;
-    world = stepWorld(world, now, rng);
-    for (const owner of NOISE) {
-      const order = noiseOrder({ marketId: 1, owner, ...sim.touch(), elapsedMs: 1000 }, rng);
-      if (order) sim.place(order, now);
-    }
-    const informed = informedOrder({ marketId: 1, owner: 'informed', fundamental: world.fundamental, ...sim.touch() });
-    if (informed) sim.place(informed, now);
-    if (spoofer) {
-      const step = spooferStep(spoof, { marketId: 1, owner: SPOOFER, now, ...sim.touch(), openOrderIds: sim.open(SPOOFER).map(o => o.id) }, spooferRng);
-      for (const order of step.place) sim.place(order, now);
-      for (const id of step.cancel) sim.cancel(id, SPOOFER, now);
-      spoof = step.state;
-    }
-  }
-  return sim.log;
-}
 
 /** Replays rows through the Cop the way the runner does (parseEventLog, then detectSpoofing on a clock). */
 function copAlerts(rows: EventLogInput[]) {
@@ -63,9 +27,9 @@ function rowsTs(name: string, rows: EventLogInput[]) {
 
 describe('Cop fixture streams (packages/cop/fixtures/streams.ts)', () => {
   const streams = {
-    mmNoiseInformed: session(),
-    fastRequoteMm: session({ requoteMs: FAST_REQUOTE_MS }),
-    withSpoofer: session({ spoofer: true }),
+    mmNoiseInformed: runStream({ seed: SEED, seconds: SECONDS }),
+    fastRequoteMm: runStream({ seed: SEED, seconds: SECONDS, mmRequoteMs: FAST_REQUOTE_MS }),
+    withSpoofer: runStream({ seed: SEED, seconds: SECONDS, spoofer: true }),
   };
 
   it('every row parses as a Cop event', () => {
