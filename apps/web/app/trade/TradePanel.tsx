@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { reducers, tables } from '@the-pit/bindings';
 import { HACK_MARKET_ID, LiveProvider } from '../../lib/live';
+import CheatButton from './CheatButton';
 
 const MAX_ORDER_QTY = 50;
 
@@ -151,6 +152,8 @@ function TradeInner() {
           ))}
         </ul>
       )}
+
+      <CheatButton lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
     </div>
   );
 }
