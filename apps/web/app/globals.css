@@ -57,3 +57,27 @@ footer { color: #8da4b1; font-size: 14px; text-align: right; }
 .order-sell { color: #ff8a6b; font-weight: 800; }
 .join-success { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
 a.join-button { display: inline-block; text-decoration: none; }
+
+/* big screen */
+.board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.board-card { border: 1px solid #26414f; border-radius: 18px; background: #0b1822; padding: 22px; min-width: 0; }
+.board-card h3 { margin: 0 0 14px; color: #9ce8dc; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+.board-price { margin: 0; font-size: clamp(48px, 7vw, 88px); font-weight: 800; line-height: 1; }
+.board-sub { margin: 8px 0 0; color: #8da4b1; font-size: 15px; }
+.board-chart { width: 100%; height: auto; margin-top: 14px; }
+.board-chart-line { fill: none; stroke: #54d7c8; stroke-width: 3; stroke-linejoin: round; }
+.book-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.book-side, .board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.book-row { position: relative; display: flex; justify-content: space-between; padding: 8px 10px; border-radius: 8px; font-size: 20px; font-weight: 700; overflow: hidden; }
+.book-row > span { position: relative; }
+.book-row > .book-bar { position: absolute; inset: 0 auto 0 0; opacity: .22; }
+.book-bid { color: #49e0bd; }
+.book-bid .book-bar { background: #49e0bd; }
+.book-ask { color: #ff8a6b; }
+.book-ask .book-bar { background: #ff8a6b; }
+.tape-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 19px; font-weight: 700; }
+.tape-row time { color: #8da4b1; font-size: 14px; font-weight: 400; }
+.rank-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 12px; align-items: baseline; font-size: 19px; font-weight: 700; }
+.rank-n { color: #8da4b1; }
+.rank-up { color: #49e0bd; min-width: 70px; text-align: right; }
+.rank-down { color: #ff8a6b; min-width: 70px; text-align: right; }
