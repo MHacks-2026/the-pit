@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T13] 17:30 EDT, Claude chat -> next
+Branch: fe/t13-live-trade (merged to main via PR)
+Done: /join and /trade now use the live SpacetimeDB reducers. apps/web/lib/live.tsx (LiveProvider) holds one connection and saves the identity token in localStorage, so /join, /trade and refreshes are the same trader. JoinForm calls join and skips the form if the account already exists. TradePanel reads account, position, order and trade tables; Buy/Sell call place_order (GTC, market 1), Cancel calls cancel_order; reducer errors show in the red line. Checked on the Vercel preview: buy filled, cash updated.
+Not done / next: T23 (Try-to-cheat button), T14 (depth chart), T25 polish, T35. mockPitClient in lib/pit-client.ts is now unused (kept as reference).
+Gotchas: Needs NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB, so localhost shows "not configured"; test on a Vercel preview. Each browser is one trader: use an incognito window for a second one. join ignores the name if the identity already has an account.
+How to verify: pnpm --filter web build, then join and buy on the preview
+Files touched: apps/web/lib/live.tsx (new), apps/web/app/join/JoinForm.tsx, apps/web/app/trade/TradePanel.tsx, TODO.md, HANDOFF.md
+
+---
+
 ## [T10, T20] 17:05 EDT, Claude chat -> next
 Branch: fe/big-screen (merged to main via PR)
 Done: /screen now has a "Live market" board (apps/web/app/screen/MarketBoard.tsx): HACK price with line chart, order book (top 8 levels, bid/ask bars), trade tape (last 12), leaderboard (cash + position at mid, robot badge for bots, PnL vs 10,000). Reads order, trade, account, position tables live from SpacetimeDB. Checked on the Vercel preview with bots trading.

@@ -20,7 +20,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 - [x] T10 FE (CU): client subscriptions: live order book and tape
 - [x] T11 YOU (CC): Market Maker (Avellaneda-Stoikov) pure function + tests
 - [x] T12 BE (CC): noise trader + runner process connecting N bot identities on timers
-- [ ] T13 FE (CU): phone trade UI wired (buy/sell, steppers, positions, open orders, cancel)
+- [x] T13 FE (CU): phone trade UI wired (buy/sell, steppers, positions, open orders, cancel)
 - [ ] T14 FE (CU): price chart and 2D depth chart on /screen
 - [ ] T15 PI (DV): isolated: engine test fixtures + property tests
 - [ ] T16 BE: attend the Spacetime workshop (~5 PM, confirm) and post 3 tips
