@@ -15,13 +15,13 @@ Files touched: <list>
 
 ---
 
-## [T29 prep, D8] Cop negative-control fixture, Claude Code -> next
+## [T29 prep, D8] Cop fixture streams, Claude Code -> next
 Branch: main (base 320606b)
-Done: packages/bots/fixtures/mm-negative-control.json: 60 s, seed 2, MM + noise-1..3 (runner default), no spoofer. 465 CopEvents (orders, cancels, trades, self_trade_attempt); detectSpoofing returns [] at every 500 ms step. negativeControl.test.ts guards this and checks the fixture stays deterministic. Sim moved to sim.testutil.ts (shared with spoofer.test.ts) and now keeps self_trade_attempt events. D8 records the FinTech track.
-Not done / next: T29 harness (N sessions, precision/recall). MM gets only ~1 fill/min: cancel-all + requote every second puts it behind older noise orders at the same prices. Consider keeping unchanged quotes (runner and sim). The runner's noise GTCs are never cancelled and will hit the 20-open-order limit.
-Gotchas: Fixture is a vitest file snapshot; regenerate with `pnpm exec vitest run -u packages/bots`. No @types/node, so tests in bots cannot import node:fs.
+Done: packages/cop/fixtures/streams.ts: three 60 s, seed 1 runs of the real bots through matchOrder, as event_log rows (payload = JSON.stringify(EngineEvent)). 1 mmNoiseInformed: 425 rows, 12 MM fills, 0 alerts. 2 fastRequoteMm (MM requotes every 250 ms): 1145 rows, 494 cancels, 0 alerts. 3 withSpoofer: 4 alerts, all SPOOFER_OWNER. copStreams.test.ts generates and guards it. D8 records the FinTech track.
+Not done / next: T29 harness (N sessions, precision/recall). Without the informed trader the MM gets ~1 fill/min (requoting puts it behind older noise orders). Noise GTCs are never cancelled and will hit the 20-open-order limit in long runs.
+Gotchas: The fixture is a vitest file snapshot; regenerate with `pnpm exec vitest run -u packages/bots`. Owners are readable names, not hex identities. The spoofer has its own rng, so the other bots make the same random draws as in run 1.
 How to verify: pnpm test && pnpm build
-Files touched: packages/bots/src/{sim.testutil,negativeControl.test,spoofer.test}.ts, packages/bots/fixtures/, docs/DECISIONS.md, HANDOFF.md
+Files touched: packages/bots/src/{sim.testutil,copStreams.test,spoofer.test}.ts, packages/cop/fixtures/streams.ts, docs/DECISIONS.md, HANDOFF.md
 
 ---
 

@@ -1,6 +1,6 @@
 import { cancelOrder, matchOrder, type Book, type EngineEvent, type MatchResult } from '@the-pit/engine';
 // Relative import keeps bots free of a new package dependency; swap for '@the-pit/cop' if the integrator adds it.
-import type { CopEvent } from '../../cop/src/index';
+import type { CopEvent, EventLogInput } from '../../cop/src/index';
 import { marketMakerQuotes } from './marketMaker';
 
 export function seeded(seed: number) {
@@ -16,6 +16,8 @@ export function seeded(seed: number) {
 export class Sim {
   book: Book;
   events: CopEvent[] = [];
+  /** event_log rows exactly as the Spacetime module writes them (a rejected order rolls back and logs nothing). */
+  log: EventLogInput[] = [];
   private id = 1;
   private logId = 1;
   constructor(owners: string[]) {
@@ -25,6 +27,8 @@ export class Sim {
   private apply(result: MatchResult) {
     this.book = result.book;
     for (const e of result.events) this.events.push(...this.toCop(e));
+    if (result.events.some(e => e.kind === 'rejected')) return;
+    for (const e of result.events) this.log.push({ id: this.log.length + 1, kind: e.kind, marketId: 1, payload: JSON.stringify(e) });
   }
   private toCop(e: EngineEvent): CopEvent[] {
     const logId = this.logId++;
