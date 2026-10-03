@@ -2,35 +2,52 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
-import { mockPitClient } from '../../lib/pit-client';
+import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
+import { reducers, tables } from '@the-pit/bindings';
+import { LiveProvider } from '../../lib/live';
 
-export default function JoinForm() {
+function JoinInner() {
+  const { identity, connectionError } = useSpacetimeDB();
+  const [accounts, accountsReady] = useTable(tables.account);
+  const join = useReducer(reducers.join);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [joined, setJoined] = useState<{ name: string; cash: number } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const me = identity
+    ? accounts.find(account => account.identity.toHexString() === identity.toHexString())
+    : undefined;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const cleanName = String(new FormData(event.currentTarget).get('name') ?? name).trim();
+    if (!cleanName || cleanName.length > 32) {
+      setError('name must be 1 to 32 characters');
+      return;
+    }
     setBusy(true);
-    const submittedName = String(new FormData(event.currentTarget).get('name') ?? name);
     try {
-      const account = await mockPitClient.join(submittedName);
-      setJoined(account);
+      await join({ name: cleanName });
     } catch (err) {
-      setJoined(null);
       setError(err instanceof Error ? err.message : 'Could not join');
     } finally {
       setBusy(false);
     }
   }
 
-  if (joined) {
+  if (connectionError) {
+    return <p className="join-error" role="alert">Could not reach the exchange. Check your connection and refresh.</p>;
+  }
+  if (!identity || !accountsReady) {
+    return <p className="feed-state" role="status">Connecting to the exchange…</p>;
+  }
+
+  if (me) {
     return (
       <div className="join-success">
         <p className="join-status" role="status">
-          Welcome, {joined.name}. Starting cash: {joined.cash.toLocaleString('en-US')} play dollars.
+          Welcome, {me.name}. Starting cash: {Number(me.cash).toLocaleString('en-US')} play dollars.
         </p>
         <Link className="join-button" href="/trade">Start trading</Link>
       </div>
@@ -53,5 +70,13 @@ export default function JoinForm() {
       {error ? <p className="join-error" role="alert">{error}</p> : null}
       <button className="join-button" type="submit" disabled={busy}>Join</button>
     </form>
+  );
+}
+
+export default function JoinForm() {
+  return (
+    <LiveProvider>
+      <JoinInner />
+    </LiveProvider>
   );
 }
