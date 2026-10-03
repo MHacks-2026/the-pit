@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Runner restart] 00:17 CEST, Codex -> next
+Branch: main (pushed, last code commit cb00970)
+Done: Restarted one runner on Shafir's Windows machine against cloud database `the-pit-mhacks-2026` (`wss://maincloud.spacetimedb.com`). Five bot identities connected and cloud trade count rose from 48 to over 300. Fixed open-order rejects so a single bot cannot stop a tick; noise bots clear stale orders near the cap. Added `scripts/run-cloud-runner.ps1`, which obtains the CLI login token without printing it and rejects a second local instance. Merged T29 evaluation; 42 tests and build pass.
+Not done / next: Move the runner to one always-on worker host; current shell session depends on this machine staying awake. Nick should fix the cheat IOC to use a live marketable buy and confirm it filled before reporting success.
+Gotchas: Live smoke test joined `backend-smoke`; its four sell layers cancelled, but buy IOC order 5451 at 122 did not fill after the ask moved, so no Cop alert was correct. Local mutex does not prevent a runner on another machine; coordinate one owner.
+How to verify: `powershell -File scripts/run-cloud-runner.ps1`; second invocation must fail. `pnpm test` and `pnpm build` pass with SpacetimeDB CLI on PATH. Check `/screen` or Maincloud trade/event counts.
+Files touched: apps/runner/src/index.ts, docs/RUNNER.md, scripts/run-cloud-runner.ps1, HANDOFF.md.
+
+---
+
 ## [T29 prep] runStream for the evaluation harness, Claude Code -> next
 Branch: main
 Done: packages/bots/src/streamSim.ts exports runStream({ seed, seconds = 60, spoofer = false, mmRequoteMs = 1000 }) -> EventLogRow[], plus SPOOFER_OWNER, STREAM_OWNERS, seeded, StreamExchange. Re-exported from @the-pit/bots. copStreams.test.ts now calls it; packages/cop/fixtures/streams.ts is byte-identical for seed 1.
