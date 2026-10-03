@@ -1,0 +1,6 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+  - "spacetimedb/spacetimedb"
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,19 @@
+{
+  "name": "@the-pit/spacetimedb",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "spacetime build --module-path .",
+    "publish": "spacetime publish the-pit-local --module-path . --server local --yes"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@the-pit/engine": "workspace:*",
+    "spacetimedb": "2.10.*"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2"
+  }
+}

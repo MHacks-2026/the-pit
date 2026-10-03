@@ -1,0 +1,6 @@
+---
+description: Project rules for THE PIT
+alwaysApply: true
+---
+Read AGENTS.md and docs/spec.md before making changes. Follow every hard rule in AGENTS.md.
+Plan first. Stay inside your assigned folder. Do not add dependencies without asking.

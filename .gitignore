@@ -1,0 +1,7 @@
+node_modules/
+.tools/
+dist/
+coverage/
+*.tsbuildinfo
+spacetime.local.json
+spacetimedb/spacetime.local.json

@@ -1,0 +1,13 @@
+{
+  "name": "the-pit",
+  "private": true,
+  "packageManager": "pnpm@12.8.1",
+  "scripts": {
+    "test": "vitest run",
+    "build": "corepack pnpm -r --if-present build"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2",
+    "vitest": "^3.2.4"
+  }
+}
