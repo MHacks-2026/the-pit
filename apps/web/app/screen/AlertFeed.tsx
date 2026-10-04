@@ -3,35 +3,55 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { tables } from '@the-pit/bindings';
+import { groupAlertCases } from '../../lib/alertCases';
 import { liveConnectionBuilder } from '../../lib/live';
 import TraderBadge from '../TraderBadge';
 
-type AlertRow = { id: bigint; kind: string; score: number; evidence: string; narration?: string; owner: { toHexString(): string } };
+type AlertRow = { id: bigint; kind: string; score: number; evidence: string; ts: { microsSinceUnixEpoch: bigint };
+  owner: { toHexString(): string } };
 
-/** Asks /api/narrate once per new alert that has no stored narration (T22). Falls back silently on any error. */
-function useNarrations(alerts: AlertRow[], names: Map<string, string>) {
-  const [narrations, setNarrations] = useState(new Map<string, string>());
-  const requested = useRef(new Set<string>());
-  useEffect(() => {
-    for (const alert of alerts) {
-      const id = alert.id.toString();
-      if (alert.narration || requested.current.has(id)) continue;
-      requested.current.add(id);
-      let evidence: unknown = null;
-      try { evidence = JSON.parse(alert.evidence); } catch { /* narrator handles missing evidence */ }
-      fetch('/api/narrate', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ alert: { kind: alert.kind, score: alert.score, trader: names.get(alert.owner.toHexString()) ?? '', evidence } }),
-      })
-        .then(response => (response.ok ? response.json() : null))
-        .then((result: { text?: string } | null) => {
-          if (result?.text) setNarrations(previous => new Map(previous).set(id, result.text!));
-        })
-        .catch(() => { /* keep the evidence summary */ });
-    }
-  }, [alerts, names]);
-  return narrations;
+type SpoofEvidence = {
+  layerSide?: 'buy' | 'sell';
+  layerOrderIds?: number[];
+  layerPrices?: number[];
+  oppositeTradeId?: number;
+  cancelledOrderIds?: number[];
+  cancelledQty?: number;
+  totalLayeredQty?: number;
+};
+
+function readEvidence(raw: string): SpoofEvidence | null {
+  try {
+    const value = JSON.parse(raw) as unknown;
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as SpoofEvidence : null;
+  } catch { return null; }
+}
+
+function sequence(raw: string): string {
+  const evidence = readEvidence(raw);
+  if (!evidence || !Array.isArray(evidence.layerOrderIds) ||
+    typeof evidence.cancelledQty !== 'number' || typeof evidence.totalLayeredQty !== 'number') {
+    return 'Evidence recorded';
+  }
+  const side = evidence.layerSide === 'buy' || evidence.layerSide === 'sell' ? evidence.layerSide : '';
+  const opposite = side === 'buy' ? 'sell' : side === 'sell' ? 'buy' : '';
+  return `${evidence.layerOrderIds.length} ${side ? side + ' ' : ''}orders → ${opposite ? opposite + ' ' : ''}trade → ${evidence.cancelledQty}/${evidence.totalLayeredQty} units cancelled`;
+}
+
+function EvidenceFacts({ raw }: { raw: string }) {
+  const evidence = readEvidence(raw);
+  if (!evidence) return <p>Structured evidence unavailable for this finding.</p>;
+  const orderIds = Array.isArray(evidence.layerOrderIds) ? evidence.layerOrderIds : [];
+  const cancelledIds = Array.isArray(evidence.cancelledOrderIds) ? evidence.cancelledOrderIds : [];
+  return <dl className="cop-facts">
+    {orderIds.length > 0 && <><dt>Layer orders</dt><dd>{orderIds.map(id => `#${id}`).join(', ')}</dd></>}
+    {Array.isArray(evidence.layerPrices) && evidence.layerPrices.length > 0 &&
+      <><dt>Prices</dt><dd>{[...new Set(evidence.layerPrices)].join(', ')} ticks</dd></>}
+    {typeof evidence.oppositeTradeId === 'number' && <><dt>Opposite trade</dt><dd>#{evidence.oppositeTradeId}</dd></>}
+    {cancelledIds.length > 0 && <><dt>Cancelled orders</dt><dd>{cancelledIds.map(id => `#${id}`).join(', ')}</dd></>}
+    {typeof evidence.cancelledQty === 'number' && typeof evidence.totalLayeredQty === 'number' &&
+      <><dt>Cancelled quantity</dt><dd>{evidence.cancelledQty} of {evidence.totalLayeredQty}</dd></>}
+  </dl>;
 }
 
 /** The newest link of the tamper-evident market record (one row), so the room can see the record being sealed. */
@@ -96,7 +116,7 @@ function useCopVoice() {
       }
       const result = await response.json() as { text?: string };
       if (result.text) { browserSay(result.text); setEngine('Browser voice'); }
-    } catch { /* the citation on screen still says it */ }
+    } catch { /* the case on screen still says it */ }
   }
 
   return { on, engine, toggle, say };
@@ -106,14 +126,18 @@ function FeedContent() {
   const { connectionError } = useSpacetimeDB();
   const [alerts, alertsReady] = useTable(tables.alert);
   const [accounts] = useTable(tables.account);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const names = new Map(accounts.map(account => [account.identity.toHexString(), account.name]));
   const bots = new Map(accounts.map(account => [account.identity.toHexString(), account.isBot]));
-  const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 12);
-  const narrations = useNarrations(latest, names);
+  const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 24);
+  const cases = groupAlertCases(latest.map(alert => ({ id: alert.id.toString(),
+    owner: alert.owner.toHexString(), kind: alert.kind,
+    at: Number(alert.ts.microsSinceUnixEpoch / 1000n), alert: alert as AlertRow })));
+  const selected = cases.find(item => item.entries.some(entry => entry.id === selectedId)) ?? cases[0];
   const voice = useCopVoice();
 
-  // The one orchestrated moment: when a new alert lands, police tape sweeps across the top of the screen.
-  // Alerts that were already there when the page loaded are treated as seen, so reloading never replays it.
+  // The one orchestrated moment: when a new alert lands, police tape sweeps across the screen, the case is stamped
+  // "Cited" and the Cop reads it out. Alerts already there when the page loaded count as seen, so a reload never replays.
   const seen = useRef<Set<string> | null>(null);
   const [fresh, setFresh] = useState(new Set<string>());
   const [sweep, setSweep] = useState(0);
@@ -126,18 +150,19 @@ function FeedContent() {
     for (const id of arrived) seen.current.add(id);
     setFresh(previous => new Set([...previous, ...arrived]));
     setSweep(n => n + 1);
+    setSelectedId(null); // jump to the newest case
     // Speak only the newest arrival, so a burst of alerts does not queue up a monologue.
     const newest = alerts.filter(alert => arrived.includes(alert.id.toString()))
       .sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch))[0];
-    let evidence: unknown = null;
-    try { evidence = JSON.parse(newest.evidence); } catch { /* narrator handles missing evidence */ }
-    void voice.say({ kind: newest.kind, score: newest.score, trader: names.get(newest.owner.toHexString()) ?? '', evidence });
+    void voice.say({ kind: newest.kind, score: newest.score, trader: names.get(newest.owner.toHexString()) ?? '',
+      evidence: readEvidence(newest.evidence) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alerts, alertsReady]);
 
   if (connectionError) return <p className="state" role="alert">The live alert feed is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
   if (!alertsReady) return <p className="state" role="status">Connecting to the live alert feed…</p>;
-  const tape = <>
+
+  const controls = <>
     {sweep ? <div key={sweep} className="cop-sweep" aria-hidden="true" /> : null}
     <p className="voice">
       <button type="button" className="voice-toggle" aria-pressed={voice.on} onClick={voice.toggle}>
@@ -146,37 +171,56 @@ function FeedContent() {
       <span className="quiet">{voice.on ? (voice.engine ? `Speaking new alerts with: ${voice.engine}` : 'New alerts will be read out.') : 'Reads each new alert aloud.'}</span>
     </p>
   </>;
-  if (!latest.length) return <>
-    {tape}
-    <p className="state" role="status">No alerts yet. The Cop is watching every order.</p>
+
+  if (!selected) return <>{controls}<p className="state" role="status">No alerts yet. The Cop is watching every order.</p><RecordSeal /></>;
+
+  const newest = selected.entries[0].alert;
+  const ownerName = names.get(selected.owner) || `Trader ${selected.owner.slice(0, 8)}`;
+  const caseLabel = `Suspected ${selected.kind.replaceAll('_', ' ')}`;
+  const isNew = fresh.has(selected.entries[0].id);
+  return <>
+    {controls}
+    <div className="cop-dashboard">
+      <article key={selected.entries[0].id} className={isNew ? 'cop-focus cop-focus-new' : 'cop-focus'} aria-live="polite">
+        <div className="cop-stripes" aria-hidden="true" />
+        <div className="cop-focus-body">
+          <div className="cop-focus-top"><span className="cop-pattern">{caseLabel}</span>
+            <time dateTime={new Date(selected.latestAt).toISOString()}>{new Date(selected.latestAt).toLocaleTimeString()}</time></div>
+          <h3 className="cop-who"><TraderBadge name={ownerName} isBot={bots.get(selected.owner) ?? false} /> {ownerName}</h3>
+          <p className="cop-sequence">{sequence(newest.evidence)}</p>
+          <p className="cop-count">{selected.entries.length} finding{selected.entries.length === 1 ? '' : 's'} shown. Pattern match, not proof of intent.</p>
+          <details className="cop-evidence">
+            <summary>View evidence</summary>
+            <ol>
+              {selected.entries.map(({ alert }) => <li key={alert.id.toString()}>
+                <div className="cop-finding-head"><strong>Finding #{alert.id.toString()}</strong>
+                  <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
+                    {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}</time></div>
+                <p>{sequence(alert.evidence)}</p>
+                <EvidenceFacts raw={alert.evidence} />
+              </li>)}
+            </ol>
+          </details>
+        </div>
+        {isNew ? <span className="stamp" aria-hidden="true">Cited</span> : null}
+      </article>
+      <aside className="cop-recent" aria-label="Recent alert cases">
+        <div className="cop-recent-head"><h3>Recent</h3>
+          {selected !== cases[0] && <button type="button" onClick={() => setSelectedId(null)}>Latest</button>}</div>
+        <ol>
+          {cases.slice(0, 5).map(item => {
+            const name = names.get(item.owner) || `Trader ${item.owner.slice(0, 8)}`;
+            return <li key={item.entries[0].id}><button type="button"
+              aria-pressed={selected === item} onClick={() => setSelectedId(item.entries[0].id)}>
+              <span><strong>{name}</strong><small>{item.kind.replaceAll('_', ' ')}, {item.entries.length} finding{item.entries.length === 1 ? '' : 's'}</small></span>
+              <time dateTime={new Date(item.latestAt).toISOString()}>{new Date(item.latestAt).toLocaleTimeString()}</time>
+            </button></li>;
+          })}
+        </ol>
+      </aside>
+    </div>
     <RecordSeal />
   </>;
-
-  return <>{tape}<ol className="citations" aria-live="polite">
-    {latest.map(alert => {
-      let detail = 'Structured evidence recorded.';
-      try {
-        const evidence = JSON.parse(alert.evidence) as { layerOrderIds?: number[]; cancelledQty?: number; totalLayeredQty?: number; oppositeTradeId?: number };
-        if (evidence.layerOrderIds && evidence.cancelledQty !== undefined && evidence.totalLayeredQty !== undefined) {
-          detail = `${evidence.layerOrderIds.length} layered orders · ${evidence.cancelledQty}/${evidence.totalLayeredQty} units cancelled · opposite trade #${evidence.oppositeTradeId}`;
-        }
-      } catch { /* keep the generic evidence label */ }
-      const id = alert.id.toString();
-      const owner = alert.owner.toHexString();
-      const name = names.get(owner) || `Trader ${owner.slice(0, 8)}`;
-      const kind = alert.kind.replaceAll('_', ' ');
-      return <li className={fresh.has(id) ? 'citation citation-new' : 'citation'} key={id}>
-        <p className="citation-kind">{kind.charAt(0).toUpperCase() + kind.slice(1)}</p>
-        <p className="citation-score"><b>{alert.score}</b>/100</p>
-        <h3 className="citation-who"><TraderBadge name={name} isBot={bots.get(owner) ?? false} /> {name}</h3>
-        <p className="citation-text">{alert.narration || narrations.get(id) || detail}</p>
-        <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
-          {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}
-        </time>
-      </li>;
-    })}
-  </ol>
-  <RecordSeal /></>;
 }
 
 export default function AlertFeed() {
@@ -185,7 +229,7 @@ export default function AlertFeed() {
   const validUri = uri && (process.env.NODE_ENV !== 'production' || uri.startsWith('wss://'));
   const connectionBuilder = useMemo(() => validUri && database ? liveConnectionBuilder(uri, database) : null, [uri, database, validUri]);
   if (!connectionBuilder) {
-    return <p className="state" role="alert">The live alert feed is not configured. Set a public wss:// NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB in Vercel, then redeploy.</p>;
+    return <p className="state" role="alert">The live alert feed is not configured.</p>;
   }
   return <SpacetimeDBProvider connectionBuilder={connectionBuilder}><FeedContent /></SpacetimeDBProvider>;
 }
