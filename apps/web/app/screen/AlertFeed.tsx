@@ -3,8 +3,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { DbConnection, tables } from '@the-pit/bindings';
+import { groupAlertCases } from '../../lib/alertCases';
 
-type AlertRow = { id: bigint; kind: string; score: number; evidence: string; narration?: string; owner: { toHexString(): string } };
+type AlertRow = { id: bigint; kind: string; score: number; evidence: string; narration?: string;
+  ts: { microsSinceUnixEpoch: bigint }; owner: { toHexString(): string } };
+
+function evidenceSummary(raw: string): string {
+  try {
+    const value = JSON.parse(raw) as Record<string, unknown>;
+    if (Array.isArray(value.layerOrderIds) && typeof value.cancelledQty === 'number' &&
+      typeof value.totalLayeredQty === 'number') {
+      return `${value.layerOrderIds.length} layered orders · ${value.cancelledQty}/${value.totalLayeredQty} units cancelled`;
+    }
+  } catch { /* Older evidence can still be inspected below. */ }
+  return 'Recorded event evidence available below.';
+}
+
+function EvidenceFacts({ raw }: { raw: string }) {
+  let value: Record<string, unknown>;
+  try { value = JSON.parse(raw) as Record<string, unknown>; }
+  catch { return <p>Evidence could not be parsed. The recorded payload is available below.</p>; }
+  const orderIds = Array.isArray(value.layerOrderIds) ? value.layerOrderIds.filter(id => typeof id === 'number') : [];
+  const cancelledIds = Array.isArray(value.cancelledOrderIds) ? value.cancelledOrderIds.filter(id => typeof id === 'number') : [];
+  return <dl className="alert-facts">
+    {orderIds.length > 0 && <><dt>Layer orders</dt><dd>{orderIds.map(id => `#${id}`).join(', ')}</dd></>}
+    {typeof value.oppositeTradeId === 'number' && <><dt>Opposite trade</dt><dd>#{value.oppositeTradeId}</dd></>}
+    {cancelledIds.length > 0 && <><dt>Cancelled orders</dt><dd>{cancelledIds.map(id => `#${id}`).join(', ')}</dd></>}
+    {typeof value.cancelledQty === 'number' && typeof value.totalLayeredQty === 'number' &&
+      <><dt>Cancelled quantity</dt><dd>{value.cancelledQty} of {value.totalLayeredQty}</dd></>}
+  </dl>;
+}
 
 /** Asks /api/narrate once per new alert that has no stored narration (T22). Falls back silently on any error. */
 function useNarrations(alerts: AlertRow[], names: Map<string, string>) {
@@ -32,7 +60,7 @@ function useNarrations(alerts: AlertRow[], names: Map<string, string>) {
   return narrations;
 }
 
-/** The newest link of the tamper-evident market record (one row), so the room can see the record being sealed. */
+/** The newest link of the tamper-evident market record (one row). */
 function RecordSeal() {
   const [heads] = useTable(tables.chainHead);
   const head = heads[0];
@@ -49,6 +77,9 @@ function FeedContent() {
   const [accounts] = useTable(tables.account);
   const names = new Map(accounts.map(account => [account.identity.toHexString(), account.name]));
   const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 12);
+  const cases = groupAlertCases(latest.map(alert => ({ id: alert.id.toString(),
+    owner: alert.owner.toHexString(), kind: alert.kind,
+    at: Number(alert.ts.microsSinceUnixEpoch / 1000n), alert })));
   const narrations = useNarrations(latest, names);
 
   if (connectionError) return <p className="feed-state" role="alert">The live alert feed is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
@@ -58,26 +89,35 @@ function FeedContent() {
     <RecordSeal />
   </>;
 
-  return <><ol className="alert-list" aria-live="polite">
-    {latest.map(alert => {
-      let detail = 'Structured evidence recorded.';
-      try {
-        const evidence = JSON.parse(alert.evidence) as { layerOrderIds?: number[]; cancelledQty?: number; totalLayeredQty?: number; oppositeTradeId?: number };
-        if (evidence.layerOrderIds && evidence.cancelledQty !== undefined && evidence.totalLayeredQty !== undefined) {
-          detail = `${evidence.layerOrderIds.length} layered orders · ${evidence.cancelledQty}/${evidence.totalLayeredQty} units cancelled · opposite trade #${evidence.oppositeTradeId}`;
-        }
-      } catch { /* keep the generic evidence label */ }
-      return <li className="alert-card" key={alert.id.toString()}>
-        <div className="alert-topline"><span className="alert-kind">{alert.kind.replaceAll('_', ' ')}</span><span className="alert-score">{alert.score}/100</span></div>
-        <h3>{names.get(alert.owner.toHexString()) || `Trader ${alert.owner.toHexString().slice(0, 8)}`}</h3>
-        <p>{alert.narration || narrations.get(alert.id.toString()) || detail}</p>
-        <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
-          {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}
-        </time>
-      </li>;
-    })}
-  </ol>
-  <RecordSeal /></>;
+  return <>
+    <p className="alert-disclaimer">Pattern matches for review. A rule score measures how closely an event matched the rule, not the probability of manipulation.</p>
+    <ol className="alert-list" aria-live="polite">
+      {cases.map(item => {
+        const newest = item.entries[0].alert;
+        return <li className="alert-card" key={`${item.owner}:${item.kind}:${newest.id}`}>
+          <div className="alert-topline"><span className="alert-kind">Suspected {item.kind.replaceAll('_', ' ')}</span>
+            <span className="alert-score">Rule match</span></div>
+          <h3>{names.get(item.owner) || `Trader ${item.owner.slice(0, 8)}`}</h3>
+          <p>{item.entries.length} recent finding{item.entries.length === 1 ? '' : 's'} shown · {evidenceSummary(newest.evidence)}</p>
+          <time dateTime={new Date(item.latestAt).toISOString()}>{new Date(item.latestAt).toLocaleTimeString()}</time>
+          <details className="alert-evidence">
+            <summary>Inspect {item.entries.length === 1 ? 'evidence' : `${item.entries.length} findings`}</summary>
+            <ol>
+              {item.entries.map(({ alert }) => <li key={alert.id.toString()}>
+                <strong>Finding #{alert.id.toString()}</strong> · <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
+                  {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}</time>
+                <p>{alert.narration || narrations.get(alert.id.toString()) || evidenceSummary(alert.evidence)}</p>
+                <p>Rule score: {alert.score}/100. This is not a calibrated confidence estimate.</p>
+                <EvidenceFacts raw={alert.evidence} />
+                <details><summary>Recorded evidence JSON</summary><pre>{alert.evidence}</pre></details>
+              </li>)}
+            </ol>
+          </details>
+        </li>;
+      })}
+    </ol>
+    <RecordSeal />
+  </>;
 }
 
 export default function AlertFeed() {

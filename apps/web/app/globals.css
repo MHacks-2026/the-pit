@@ -14,6 +14,17 @@ h1 { margin: 0; font-size: clamp(58px, 9vw, 112px); line-height: .9; letter-spac
 .feed-heading > p { color: #98989d; font-size: 14px; }
 .feed-state { padding: 70px 20px; color: #98989d; text-align: center; }
 .alert-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 0; }
+.alert-disclaimer { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 16px; }
+.alert-evidence { border-top: 1px solid rgba(255, 255, 255, .12); margin-top: 16px; padding-top: 12px; }
+.alert-evidence summary { color: #ffb340; cursor: pointer; font-size: 13px; font-weight: 700; }
+.alert-evidence ol { list-style: none; padding: 0; margin: 12px 0 0; }
+.alert-evidence li { border-top: 1px solid rgba(255, 255, 255, .1); padding: 12px 0; font-size: 13px; }
+.alert-evidence li:first-child { border-top: 0; }
+.alert-evidence li p { min-height: 0; margin: 8px 0; font-size: 13px; }
+.alert-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 12px 0; font-size: 12px; }
+.alert-facts dt { color: var(--muted); }
+.alert-facts dd { margin: 0; overflow-wrap: anywhere; }
+.alert-evidence pre { overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #c7c7cc; font-size: 11px; }
 .alert-card { padding: 22px; border: 1px solid #6b4a1a; border-radius: 17px; background: linear-gradient(140deg, #2a2218, #1c1c1e 70%); }
 .alert-kind { color: #ffb340; font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
 .alert-score { background: #4a3410; color: #ffcf80; border-radius: 6px; padding: 5px 8px; font-size: 13px; font-weight: 800; }
