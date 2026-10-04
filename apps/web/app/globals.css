@@ -447,3 +447,12 @@ h1 { letter-spacing: -.04em; }
 .cite-box .join-button { border: 0; padding: 14px 28px; background: #f5f5f7; color: #000; box-shadow: none; }
 .cite-box .join-button:hover { background: #fff; }
 .cite-canvas { box-shadow: 0 24px 50px -28px rgba(0, 0, 0, .9); border-radius: 14px; max-width: 460px; }
+
+/* bolder buttons */
+.cop-button, .cheat-button, .cite-box .join-button { font-size: 18px; font-weight: 800; letter-spacing: -.015em; padding: 18px 36px; }
+.cop-button { background: linear-gradient(180deg, #ffc15e, #ff9500); color: #1f1100; box-shadow: 0 14px 34px -12px rgba(255, 149, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .45); }
+.cheat-button { border: 0; background: linear-gradient(180deg, #ff6a61, #ff3b30); color: #fff; box-shadow: 0 14px 34px -12px rgba(255, 59, 48, .85), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.cheat-button:not(:disabled):hover { background: linear-gradient(180deg, #ff7a72, #ff4a40); }
+.cheat-button:disabled { opacity: .35; box-shadow: none; }
+.cite-box .join-button { background: #fff; color: #000; box-shadow: 0 14px 34px -14px rgba(255, 255, 255, .5); }
+.join-button { font-weight: 800; }

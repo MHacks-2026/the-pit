@@ -63,7 +63,7 @@ type CitationData = {
   layered: boolean; opposite: boolean; cancelled: boolean;
 };
 
-// Small seeded random, so the same citation always has the same toner speckle and signature.
+// Small seeded random, so the same citation always has the same toner speckle and typing wobble.
 function rng(seed: number) {
   let a = seed >>> 0;
   return () => {
@@ -88,51 +88,53 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxW: number, size
   return s;
 }
 
-// One bordered cell of the form: small printed label in the corner, typed value underneath.
-function cell(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, label: string, value: string) {
-  ctx.strokeStyle = '#111';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, w, h);
-  ctx.fillStyle = '#444';
-  ctx.font = `700 14px ${SANS}`;
-  ctx.fillText(label, x + 10, y + 22);
-  ctx.fillStyle = '#111';
-  fitText(ctx, value, w - 24, 30, MONO, 700);
-  ctx.fillText(value, x + 12, y + h - 16);
-}
-
-function bar(ctx: CanvasRenderingContext2D, y: number, text: string) {
-  ctx.fillStyle = '#111';
-  ctx.fillRect(80, y, 920, 38);
-  ctx.fillStyle = '#fff';
-  ctx.font = `700 18px ${SANS}`;
-  ctx.fillText(text, 92, y + 25);
-}
-
-function check(ctx: CanvasRenderingContext2D, x: number, y: number, on: boolean, label: string) {
-  ctx.strokeStyle = '#111';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y - 18, 22, 22);
-  if (on) {
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.moveTo(x + 4, y - 14);
-    ctx.lineTo(x + 18, y);
-    ctx.moveTo(x + 18, y - 14);
-    ctx.lineTo(x + 4, y);
-    ctx.stroke();
-  }
-  ctx.fillStyle = on ? '#111' : '#777';
-  ctx.font = `${on ? 700 : 400} 22px ${MONO}`;
-  ctx.fillText(label, x + 38, y);
-}
-
 function draw(canvas: HTMLCanvasElement, c: CitationData) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const rand = rng(c.seed * 7919 + 13);
+  const L = 90;
+  const R = 990;
 
-  // desk and sheet: plain, flat, like a clean scan
+  // typed text: each line sits a hair off the baseline and a little uneven in ink, like a real typewriter
+  function typed(text: string, x: number, y: number, size: number, weight = 400, color = '#1a1a1a') {
+    ctx!.save();
+    ctx!.globalAlpha = 0.86 + rand() * 0.14;
+    ctx!.fillStyle = color;
+    ctx!.font = `${weight} ${size}px ${MONO}`;
+    ctx!.fillText(text, x + (rand() - 0.5) * 1.2, y + (rand() - 0.5) * 1.6);
+    ctx!.restore();
+  }
+  function rule(y: number, width = 2, dash: number[] = []) {
+    ctx!.strokeStyle = '#1a1a1a';
+    ctx!.lineWidth = width;
+    ctx!.setLineDash(dash);
+    ctx!.beginPath();
+    ctx!.moveTo(L, y);
+    ctx!.lineTo(R, y);
+    ctx!.stroke();
+    ctx!.setLineDash([]);
+  }
+  // "LABEL ........ typed value" on one line, like a filled-in form
+  function line(label: string, value: string, y: number, valueColor = '#1a1a1a') {
+    typed(label, L, y, 21, 400, '#555');
+    const x = L + 250;
+    const size = fitText(ctx!, value, R - x, 29, MONO, 700);
+    typed(value, x, y, size, 700, valueColor);
+    ctx!.strokeStyle = 'rgba(0, 0, 0, .35)';
+    ctx!.lineWidth = 1.5;
+    ctx!.setLineDash([2, 5]);
+    ctx!.beginPath();
+    ctx!.moveTo(x, y + 9);
+    ctx!.lineTo(R, y + 9);
+    ctx!.stroke();
+    ctx!.setLineDash([]);
+  }
+  function mark(on: boolean, label: string, y: number) {
+    typed(on ? '[X]' : '[ ]', L, y, 24, 700, on ? '#1a1a1a' : '#888');
+    typed(label, L + 66, y, 23, on ? 700 : 400, on ? '#1a1a1a' : '#888');
+  }
+
+  // desk and plain white sheet
   ctx.fillStyle = '#c9c9c6';
   ctx.fillRect(0, 0, W, H);
   ctx.save();
@@ -142,112 +144,68 @@ function draw(canvas: HTMLCanvasElement, c: CitationData) {
   ctx.fillStyle = '#fbfbf9';
   ctx.fillRect(40, 40, W - 80, H - 80);
   ctx.restore();
-  // light toner speckle
-  for (let i = 0; i < 1400; i++) {
+  for (let i = 0; i < 1500; i++) {
     ctx.fillStyle = `rgba(0, 0, 0, ${0.04 + rand() * 0.08})`;
     ctx.fillRect(40 + rand() * (W - 80), 40 + rand() * (H - 80), 1 + rand(), 1 + rand());
   }
   ctx.textBaseline = 'alphabetic';
 
   // letterhead
-  ctx.fillStyle = '#111';
-  ctx.font = `800 40px ${SANS}`;
-  ctx.fillText('THE PIT EXCHANGE', 80, 112);
-  ctx.font = `700 24px ${SANS}`;
-  ctx.fillText('MARKET COP DIVISION', 80, 148);
-  ctx.fillStyle = '#444';
-  ctx.font = `700 19px ${MONO}`;
-  ctx.fillText('NOTICE OF VIOLATION AND CITATION', 80, 182);
+  typed('THE PIT EXCHANGE', L, 122, 38, 700);
+  typed('MARKET COP DIVISION', L, 160, 24, 400, '#333');
+  rule(186, 3);
+  typed('NOTICE OF VIOLATION', L, 244, 34, 700);
+  ctx.textAlign = 'right';
+  typed(`No. ${c.no}`, R, 244, 30, 700);
+  ctx.textAlign = 'left';
+  rule(268, 1.5);
 
-  // citation number box
-  ctx.strokeStyle = '#111';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(720, 80, 280, 110);
-  ctx.fillStyle = '#444';
-  ctx.font = `700 14px ${SANS}`;
-  ctx.fillText('CITATION NO.', 732, 104);
-  ctx.fillStyle = '#111';
-  fitText(ctx, c.no, 256, 44, MONO, 700);
-  ctx.fillText(c.no, 732, 164);
+  // filled-in lines
+  line('VIOLATOR', `${c.name} (${c.account})`, 326);
+  line('DATE / TIME', `${c.when}  ${c.time}`, 376);
+  line('MARKET', 'HACK / THE PIT', 426);
+  line('OFFENSE', c.offense, 476);
+  line('CODE', c.code, 526);
+  line('CONFIDENCE', `${c.score} / 100`, 576);
+  line('FINE', `${c.fine} POINTS`, 626);
 
-  ctx.fillStyle = '#111';
-  ctx.fillRect(80, 206, 920, 6);
+  // findings, typed checklist
+  typed('FINDINGS', L, 706, 22, 700);
+  rule(718, 1.5);
+  mark(c.layered, 'Layering: orders placed to fake depth', 762);
+  mark(c.opposite, 'Trade made on the opposite side', 802);
+  mark(c.cancelled, 'Orders pulled before they filled', 842);
+  mark(false, 'Wash trading', 882);
+  mark(false, 'Quote stuffing', 922);
 
-  // form
-  cell(ctx, 80, 228, 640, 84, 'VIOLATOR', c.name);
-  cell(ctx, 720, 228, 280, 84, 'ACCOUNT ID', c.account);
-  cell(ctx, 80, 312, 340, 84, 'DATE', c.when);
-  cell(ctx, 420, 312, 300, 84, 'TIME', c.time);
-  cell(ctx, 720, 312, 280, 84, 'MARKET', 'HACK / THE PIT');
-  cell(ctx, 80, 396, 640, 84, 'VIOLATION', c.offense);
-  cell(ctx, 720, 396, 280, 84, 'CODE', c.code);
-  cell(ctx, 80, 480, 340, 84, 'CONFIDENCE', `${c.score} / 100`);
-  cell(ctx, 420, 480, 300, 84, 'FINE ASSESSED', `${c.fine} PTS`);
-  cell(ctx, 720, 480, 280, 84, 'STATUS', 'ISSUED');
-
-  // violation checklist
-  bar(ctx, 588, 'VIOLATION DETAILS');
-  check(ctx, 92, 672, c.layered, 'LAYERING  Orders placed to fake market depth');
-  check(ctx, 92, 716, c.opposite, 'OPPOSITE-SIDE TRADE  Executed against own layers');
-  check(ctx, 92, 760, c.cancelled, 'MASS CANCELLATION  Orders pulled before filling');
-  check(ctx, 92, 804, false, 'WASH TRADING  Trading against oneself');
-  check(ctx, 92, 848, false, 'QUOTE STUFFING  Excessive order messages');
-
-  // narrative
-  bar(ctx, 876, "OFFICER'S NARRATIVE");
-  ctx.strokeStyle = '#111';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(80, 914, 920, 232);
-  ctx.fillStyle = '#111';
-  ctx.font = `400 27px ${MONO}`;
-  wrap(ctx, c.text.toUpperCase(), 890).slice(0, 5).forEach((line, i) => ctx.fillText(line, 96, 956 + i * 42));
+  // officer's notes
+  typed("OFFICER'S NOTES", L, 1002, 22, 700);
+  rule(1014, 1.5);
+  ctx.font = `400 26px ${MONO}`;
+  wrap(ctx, c.text.toUpperCase(), R - L).slice(0, 5).forEach((ln, i) => typed(ln, L, 1058 + i * 38, 26));
 
   // evidence and disposition
-  ctx.fillStyle = '#333';
-  ctx.font = `400 20px ${MONO}`;
-  ctx.fillText(`EVIDENCE: ${c.detail}`.toUpperCase().slice(0, 78), 80, 1182);
-  ctx.fillStyle = '#555';
-  ctx.font = `400 17px ${SANS}`;
-  wrap(ctx, `A fine of ${c.fine} points has been applied to your Beat the Cop score. Continued manipulation of the order book may result in further citations. Payment is not required in play dollars.`, 920)
-    .slice(0, 3)
-    .forEach((line, i) => ctx.fillText(line, 80, 1214 + i * 24));
+  typed(`EVIDENCE: ${c.detail}`.toUpperCase().slice(0, 78), L, 1270, 19, 400, '#444');
 
-  // signatures
+  // signature, in pen
   ctx.strokeStyle = '#111';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(80, 1316);
-  ctx.lineTo(480, 1316);
-  ctx.moveTo(560, 1316);
-  ctx.lineTo(1000, 1316);
+  ctx.moveTo(L, 1336);
+  ctx.lineTo(480, 1336);
   ctx.stroke();
   ctx.lineWidth = 2.4;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(96, 1296);
-  ctx.bezierCurveTo(118, 1250, 138, 1316, 160, 1272);
-  ctx.bezierCurveTo(176, 1244, 190, 1300, 218, 1280);
-  ctx.bezierCurveTo(244, 1262, 262, 1298, 296, 1282);
-  ctx.bezierCurveTo(332, 1266, 360, 1296, 420, 1276);
+  ctx.moveTo(106, 1316);
+  ctx.bezierCurveTo(128, 1270, 148, 1336, 170, 1292);
+  ctx.bezierCurveTo(186, 1264, 200, 1320, 228, 1300);
+  ctx.bezierCurveTo(254, 1282, 272, 1318, 306, 1302);
+  ctx.bezierCurveTo(342, 1286, 370, 1316, 430, 1296);
   ctx.stroke();
-  ctx.fillStyle = '#444';
-  ctx.font = `700 13px ${SANS}`;
-  ctx.fillText('ISSUING OFFICER  M. COP, BADGE 001', 80, 1338);
-  ctx.fillText('VIOLATOR  (SIGNATURE NOT REQUIRED)', 560, 1338);
-
-  // barcode and fine print
-  let x = 80;
-  const bars = rng(c.seed * 31 + 5);
-  ctx.fillStyle = '#111';
-  while (x < 330) {
-    const w = 2 + Math.floor(bars() * 4);
-    ctx.fillRect(x, 1352, w, 24);
-    x += w + 2 + Math.floor(bars() * 3);
-  }
-  ctx.fillStyle = '#666';
-  ctx.font = `400 13px ${MONO}`;
+  typed('ISSUING OFFICER M. COP, BADGE 001', L, 1360, 14, 400, '#555');
   ctx.textAlign = 'right';
-  ctx.fillText('FICTIONAL AGENCY. THE PIT, MHACKS 2026. PLAY MONEY ONLY.', 1000, 1370);
+  typed('FICTIONAL AGENCY. PLAY MONEY ONLY. NO REAL FINES.', R, 1360, 14, 400, '#777');
   ctx.textAlign = 'left';
 }
 
