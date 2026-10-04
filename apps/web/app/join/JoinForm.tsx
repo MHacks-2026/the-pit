@@ -30,14 +30,14 @@ function JoinInner() {
     try {
       await join({ name: cleanName });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not join');
+      setError(err instanceof Error ? err.message : 'Couldn’t join. Please try again.');
     } finally {
       setBusy(false);
     }
   }
 
   if (connectionError) {
-    return <p className="join-error" role="alert">Could not reach the exchange. Check your connection and refresh.</p>;
+    return <p className="join-error" role="alert">Couldn’t reach the exchange. Check your connection and refresh.</p>;
   }
   if (!identity || !accountsReady) {
     return <p className="feed-state" role="status">Connecting to the exchange…</p>;
@@ -47,7 +47,7 @@ function JoinInner() {
     return (
       <div className="join-success">
         <p className="join-status" role="status">
-          Welcome, {me.name}. Starting cash: {Number(me.cash).toLocaleString('en-US')} play dollars.
+          Welcome, {me.name}! Starting cash: {Number(me.cash).toLocaleString('en-US')} play dollars.
         </p>
         <Link className="join-button" href="/trade">Start trading</Link>
       </div>
@@ -68,11 +68,11 @@ function JoinInner() {
       />
       <p className="join-hint">Starting cash is 10,000 play dollars.</p>
       {error ? <p className="join-error" role="alert">{error}</p> : null}
-      <button className="join-button" type="submit" disabled={busy}>Join the pit</button>
+      <button className="join-button" type="submit" disabled={busy}>Join the Pit</button>
       <ul className="join-perks">
-        <li>10,000 play dollars to start</li>
+        <li>Start with 10,000 play dollars</li>
         <li>Trade live against AI bots</li>
-        <li>A Market Cop watches every order</li>
+        <li>The Market Cop watches every order</li>
       </ul>
     </form>
   );

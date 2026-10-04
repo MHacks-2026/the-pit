@@ -48,9 +48,9 @@ export default function CheatButton({ lastPrice, bestAsk }: { lastPrice: number 
     // Always clean up, even if a step failed, so no fake orders are left in the book.
     try {
       await cancelAll();
-      setStatus(failed ? null : 'Done. Watch the Big Screen: did the Market Cop catch you?');
+      setStatus(failed ? null : 'Done. Check the Big Screen. Did the Market Cop catch you?');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not pull the wall');
+      setError(err instanceof Error ? err.message : 'Couldn’t pull the wall');
     } finally {
       setRunning(false);
     }

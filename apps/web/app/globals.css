@@ -423,3 +423,6 @@ h1 { letter-spacing: -.04em; }
 /* cards become frosted glass so the light moves behind them */
 .board-card, .join-card, .feed-shell:not(.feed-open), .qr-badge, .board-stats div, .mq, .trade-stats div, .trade-order, .alert-card { background: rgba(28, 28, 30, .68); -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%); }
 .board-card[aria-label="Price"] { background: rgba(28, 28, 30, .68); }
+
+/* capitalise the alert type shown by the (teammate-owned) alert feed */
+.alert-kind { text-transform: capitalize; }

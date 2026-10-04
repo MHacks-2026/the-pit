@@ -127,11 +127,11 @@ function Board() {
       marquee.push({ id: `t${t.id}`, kind: t.side === 'sell' ? 'sell' : 'buy', label: `${t.who} ${t.side === 'buy' ? 'bought' : 'sold'} ${t.qty} @`, value: String(t.price) });
     }
     for (const al of recentAlerts) {
-      marquee.push({ id: `a${al.id}`, kind: 'cop', label: `COP · ${al.kind.replaceAll('_', ' ')} flagged on ${nameByKey.get(al.owner.toHexString()) ?? 'a trader'} ·`, value: `${al.score}/100` });
+      marquee.push({ id: `a${al.id}`, kind: 'cop', label: `Cop alert · ${al.kind.charAt(0).toUpperCase()}${al.kind.slice(1).replaceAll('_', ' ')} on ${nameByKey.get(al.owner.toHexString()) ?? 'a trader'} ·`, value: `${al.score}/100` });
     }
     if (news.length) {
       const n = [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0];
-      marquee.push({ id: 'news', kind: 'news', label: 'NEWS ·', value: n.text });
+      marquee.push({ id: 'news', kind: 'news', label: 'News ·', value: n.text });
     }
     if (leaderboard.length) {
       marquee.push({ id: 'lead', kind: 'leader', label: `Leader · ${leaderboard[0].name}`, value: signed(leaderboard[0].net - START_CASH) });
