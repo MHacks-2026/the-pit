@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Cop dashboard] 14:49 CEST, Codex -> team
+Branch: main (compact alert screen built from feat/cop-investigation-preview)
+Done: Reworked `/screen` surveillance display into one selected incident and a five-row recent list. It follows the newest case by default; selecting an older case keeps it visible while more alerts arrive, and Latest restores live focus. Each case shows suspected pattern, trader, time, one-line order/trade/cancel sequence, and a count. View evidence reveals each original finding with order IDs, price levels, trade ID and cancelled quantity. Removed the misleading 100/100 badge and long repeated narration from this view; alert data and detection are unchanged. Full test/build passed (121 unit tests).
+Not done / next: Verify the production Vercel `/screen` visually after deployment. No alert adjudication, monitoring, or model work is included.
+Gotchas: `FrontEndChanges` is still an unmerged team branch and also edits AlertFeed.tsx and globals.css for Cop voice and design. Resolve its merge carefully so the new voice toggle survives without restoring the misleading score wall. Cases are display-only, grouped from the 24 most recent alert rows; five cases are listed.
+How to verify: `pnpm test`, `pnpm build`; open `/screen`, select a recent case, expand View evidence, then select Latest.
+Files touched: apps/web/app/screen/AlertFeed.tsx, apps/web/app/globals.css, HANDOFF.md.
+
+---
+
 ## [Cop investigation preview] 13:47 CEST, Codex -> team
 Branch: feat/cop-investigation-preview (based on main 0a77d74)
 Done: Read-only `/screen` preview groups nearby alerts from the same trader and rule into a display case, keeps every original finding expandable, shows evidence order/trade IDs and quantities, and labels the existing numeric value as a rule score rather than confidence. No schema, reducer, trading, or production runner changes. Two grouping tests added.

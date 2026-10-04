@@ -1,73 +1,63 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { DbConnection, tables } from '@the-pit/bindings';
 import { groupAlertCases } from '../../lib/alertCases';
 
-type AlertRow = { id: bigint; kind: string; score: number; evidence: string; narration?: string;
-  ts: { microsSinceUnixEpoch: bigint }; owner: { toHexString(): string } };
+type AlertRow = { id: bigint; kind: string; evidence: string; ts: { microsSinceUnixEpoch: bigint };
+  owner: { toHexString(): string } };
 
-function evidenceSummary(raw: string): string {
+type SpoofEvidence = {
+  layerSide?: 'buy' | 'sell';
+  layerOrderIds?: number[];
+  layerPrices?: number[];
+  oppositeTradeId?: number;
+  cancelledOrderIds?: number[];
+  cancelledQty?: number;
+  totalLayeredQty?: number;
+};
+
+function readEvidence(raw: string): SpoofEvidence | null {
   try {
-    const value = JSON.parse(raw) as Record<string, unknown>;
-    if (Array.isArray(value.layerOrderIds) && typeof value.cancelledQty === 'number' &&
-      typeof value.totalLayeredQty === 'number') {
-      return `${value.layerOrderIds.length} layered orders · ${value.cancelledQty}/${value.totalLayeredQty} units cancelled`;
-    }
-  } catch { /* Older evidence can still be inspected below. */ }
-  return 'Recorded event evidence available below.';
+    const value = JSON.parse(raw) as unknown;
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as SpoofEvidence : null;
+  } catch { return null; }
+}
+
+function sequence(raw: string): string {
+  const evidence = readEvidence(raw);
+  if (!evidence || !Array.isArray(evidence.layerOrderIds) ||
+    typeof evidence.cancelledQty !== 'number' || typeof evidence.totalLayeredQty !== 'number') {
+    return 'Evidence recorded';
+  }
+  const side = evidence.layerSide === 'buy' || evidence.layerSide === 'sell' ? evidence.layerSide : '';
+  const opposite = side === 'buy' ? 'sell' : side === 'sell' ? 'buy' : '';
+  return `${evidence.layerOrderIds.length} ${side ? side + ' ' : ''}orders → ${opposite ? opposite + ' ' : ''}trade → ${evidence.cancelledQty}/${evidence.totalLayeredQty} units cancelled`;
 }
 
 function EvidenceFacts({ raw }: { raw: string }) {
-  let value: Record<string, unknown>;
-  try { value = JSON.parse(raw) as Record<string, unknown>; }
-  catch { return <p>Evidence could not be parsed. The recorded payload is available below.</p>; }
-  const orderIds = Array.isArray(value.layerOrderIds) ? value.layerOrderIds.filter(id => typeof id === 'number') : [];
-  const cancelledIds = Array.isArray(value.cancelledOrderIds) ? value.cancelledOrderIds.filter(id => typeof id === 'number') : [];
-  return <dl className="alert-facts">
+  const evidence = readEvidence(raw);
+  if (!evidence) return <p>Structured evidence unavailable for this finding.</p>;
+  const orderIds = Array.isArray(evidence.layerOrderIds) ? evidence.layerOrderIds : [];
+  const cancelledIds = Array.isArray(evidence.cancelledOrderIds) ? evidence.cancelledOrderIds : [];
+  return <dl className="cop-facts">
     {orderIds.length > 0 && <><dt>Layer orders</dt><dd>{orderIds.map(id => `#${id}`).join(', ')}</dd></>}
-    {typeof value.oppositeTradeId === 'number' && <><dt>Opposite trade</dt><dd>#{value.oppositeTradeId}</dd></>}
+    {Array.isArray(evidence.layerPrices) && evidence.layerPrices.length > 0 &&
+      <><dt>Prices</dt><dd>{[...new Set(evidence.layerPrices)].join(', ')} ticks</dd></>}
+    {typeof evidence.oppositeTradeId === 'number' && <><dt>Opposite trade</dt><dd>#{evidence.oppositeTradeId}</dd></>}
     {cancelledIds.length > 0 && <><dt>Cancelled orders</dt><dd>{cancelledIds.map(id => `#${id}`).join(', ')}</dd></>}
-    {typeof value.cancelledQty === 'number' && typeof value.totalLayeredQty === 'number' &&
-      <><dt>Cancelled quantity</dt><dd>{value.cancelledQty} of {value.totalLayeredQty}</dd></>}
+    {typeof evidence.cancelledQty === 'number' && typeof evidence.totalLayeredQty === 'number' &&
+      <><dt>Cancelled quantity</dt><dd>{evidence.cancelledQty} of {evidence.totalLayeredQty}</dd></>}
   </dl>;
 }
 
-/** Asks /api/narrate once per new alert that has no stored narration (T22). Falls back silently on any error. */
-function useNarrations(alerts: AlertRow[], names: Map<string, string>) {
-  const [narrations, setNarrations] = useState(new Map<string, string>());
-  const requested = useRef(new Set<string>());
-  useEffect(() => {
-    for (const alert of alerts) {
-      const id = alert.id.toString();
-      if (alert.narration || requested.current.has(id)) continue;
-      requested.current.add(id);
-      let evidence: unknown = null;
-      try { evidence = JSON.parse(alert.evidence); } catch { /* narrator handles missing evidence */ }
-      fetch('/api/narrate', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ alert: { kind: alert.kind, score: alert.score, trader: names.get(alert.owner.toHexString()) ?? '', evidence } }),
-      })
-        .then(response => (response.ok ? response.json() : null))
-        .then((result: { text?: string } | null) => {
-          if (result?.text) setNarrations(previous => new Map(previous).set(id, result.text!));
-        })
-        .catch(() => { /* keep the evidence summary */ });
-    }
-  }, [alerts, names]);
-  return narrations;
-}
-
-/** The newest link of the tamper-evident market record (one row). */
 function RecordSeal() {
   const [heads] = useTable(tables.chainHead);
   const head = heads[0];
   if (!head) return null;
-  return <p className="board-sub" title={`Latest SHA-256 link: ${head.hash}`}>
-    Market record sealed: {Number(head.seq).toLocaleString('en-US')} linked events · head <code>{head.hash.slice(0, 8)}…{head.hash.slice(-4)}</code>.
-    Editing or deleting any past event breaks every later link.
+  return <p className="cop-seal" title={`Latest SHA-256 link: ${head.hash}`}>
+    Record sealed · {Number(head.seq).toLocaleString('en-US')} linked events · {head.hash.slice(0, 8)}…
   </p>;
 }
 
@@ -75,47 +65,57 @@ function FeedContent() {
   const { connectionError } = useSpacetimeDB();
   const [alerts, alertsReady] = useTable(tables.alert);
   const [accounts] = useTable(tables.account);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const names = new Map(accounts.map(account => [account.identity.toHexString(), account.name]));
-  const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 12);
+  const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 24);
   const cases = groupAlertCases(latest.map(alert => ({ id: alert.id.toString(),
     owner: alert.owner.toHexString(), kind: alert.kind,
-    at: Number(alert.ts.microsSinceUnixEpoch / 1000n), alert })));
-  const narrations = useNarrations(latest, names);
+    at: Number(alert.ts.microsSinceUnixEpoch / 1000n), alert: alert as AlertRow })));
+  const selected = cases.find(item => item.entries.some(entry => entry.id === selectedId)) ?? cases[0];
 
-  if (connectionError) return <p className="feed-state" role="alert">The live alert feed is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
-  if (!alertsReady) return <p className="feed-state" role="status">Connecting to the live alert feed…</p>;
-  if (!latest.length) return <>
-    <p className="feed-state" role="status">No alerts yet. The Market Cop is watching the order stream.</p>
-    <RecordSeal />
-  </>;
+  if (connectionError) return <p className="feed-state" role="alert">Live alert feed unavailable.</p>;
+  if (!alertsReady) return <p className="feed-state" role="status">Connecting to live alerts…</p>;
+  if (!selected) return <><p className="feed-state" role="status">No alerts yet. The Market Cop is watching.</p><RecordSeal /></>;
 
+  const newest = selected.entries[0].alert;
+  const ownerName = names.get(selected.owner) || `Trader ${selected.owner.slice(0, 8)}`;
+  const caseLabel = `Suspected ${selected.kind.replaceAll('_', ' ')}`;
   return <>
-    <p className="alert-disclaimer">Pattern matches for review. A rule score measures how closely an event matched the rule, not the probability of manipulation.</p>
-    <ol className="alert-list" aria-live="polite">
-      {cases.map(item => {
-        const newest = item.entries[0].alert;
-        return <li className="alert-card" key={`${item.owner}:${item.kind}:${newest.id}`}>
-          <div className="alert-topline"><span className="alert-kind">Suspected {item.kind.replaceAll('_', ' ')}</span>
-            <span className="alert-score">Rule match</span></div>
-          <h3>{names.get(item.owner) || `Trader ${item.owner.slice(0, 8)}`}</h3>
-          <p>{item.entries.length} recent finding{item.entries.length === 1 ? '' : 's'} shown · {evidenceSummary(newest.evidence)}</p>
-          <time dateTime={new Date(item.latestAt).toISOString()}>{new Date(item.latestAt).toLocaleTimeString()}</time>
-          <details className="alert-evidence">
-            <summary>Inspect {item.entries.length === 1 ? 'evidence' : `${item.entries.length} findings`}</summary>
-            <ol>
-              {item.entries.map(({ alert }) => <li key={alert.id.toString()}>
-                <strong>Finding #{alert.id.toString()}</strong> · <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
-                  {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}</time>
-                <p>{alert.narration || narrations.get(alert.id.toString()) || evidenceSummary(alert.evidence)}</p>
-                <p>Rule score: {alert.score}/100. This is not a calibrated confidence estimate.</p>
-                <EvidenceFacts raw={alert.evidence} />
-                <details><summary>Recorded evidence JSON</summary><pre>{alert.evidence}</pre></details>
-              </li>)}
-            </ol>
-          </details>
-        </li>;
-      })}
-    </ol>
+    <div className="cop-dashboard">
+      <article className="cop-focus" aria-live="polite">
+        <div className="cop-focus-top"><span className="cop-pattern">{caseLabel}</span>
+          <time dateTime={new Date(selected.latestAt).toISOString()}>{new Date(selected.latestAt).toLocaleTimeString()}</time></div>
+        <h3>{ownerName}</h3>
+        <p className="cop-sequence">{sequence(newest.evidence)}</p>
+        <p className="cop-count">{selected.entries.length} finding{selected.entries.length === 1 ? '' : 's'} shown · Pattern match, not proof of intent</p>
+        <details className="cop-evidence">
+          <summary>View evidence</summary>
+          <ol>
+            {selected.entries.map(({ alert }) => <li key={alert.id.toString()}>
+              <div className="cop-finding-head"><strong>Finding #{alert.id.toString()}</strong>
+                <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
+                  {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}</time></div>
+              <p>{sequence(alert.evidence)}</p>
+              <EvidenceFacts raw={alert.evidence} />
+            </li>)}
+          </ol>
+        </details>
+      </article>
+      <aside className="cop-recent" aria-label="Recent alert cases">
+        <div className="cop-recent-head"><h3>Recent</h3>
+          {selected !== cases[0] && <button type="button" onClick={() => setSelectedId(null)}>Latest</button>}</div>
+        <ol>
+          {cases.slice(0, 5).map(item => {
+            const name = names.get(item.owner) || `Trader ${item.owner.slice(0, 8)}`;
+            return <li key={item.entries[0].id}><button type="button"
+              aria-pressed={selected === item} onClick={() => setSelectedId(item.entries[0].id)}>
+              <span><strong>{name}</strong><small>{item.kind.replaceAll('_', ' ')} · {item.entries.length} finding{item.entries.length === 1 ? '' : 's'}</small></span>
+              <time dateTime={new Date(item.latestAt).toISOString()}>{new Date(item.latestAt).toLocaleTimeString()}</time>
+            </button></li>;
+          })}
+        </ol>
+      </aside>
+    </div>
     <RecordSeal />
   </>;
 }
@@ -128,7 +128,7 @@ export default function AlertFeed() {
     .withUri(uri)
     .withDatabaseName(database) : null, [uri, database, validUri]);
   if (!connectionBuilder) {
-    return <p className="feed-state" role="alert">The live alert feed is not configured. Set a public wss:// NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB in Vercel, then redeploy.</p>;
+    return <p className="feed-state" role="alert">The live alert feed is not configured.</p>;
   }
   return <SpacetimeDBProvider connectionBuilder={connectionBuilder}><FeedContent /></SpacetimeDBProvider>;
 }

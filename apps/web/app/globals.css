@@ -527,3 +527,34 @@ h1 { letter-spacing: -.04em; }
   .brand-top { margin-bottom: 12px; }
   .subtitle { margin-top: 8px; font-size: 16px; }
 }
+
+/* Market Cop: one readable incident, with a compact recent queue. */
+.cop-dashboard { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
+.cop-focus, .cop-recent { background: rgba(28, 28, 30, .72); border: 1px solid rgba(255, 255, 255, .1); border-radius: 18px; }
+.cop-focus { padding: 24px; border-left: 3px solid #ff9f0a; min-width: 0; }
+.cop-focus-top, .cop-finding-head, .cop-recent-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.cop-pattern { color: #ffb340; font-size: 12px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.cop-focus time, .cop-recent time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.cop-focus h3 { margin: 18px 0 10px; font-size: clamp(25px, 3vw, 36px); line-height: 1.1; }
+.cop-sequence { margin: 0; font-size: clamp(17px, 2vw, 23px); font-weight: 600; line-height: 1.4; }
+.cop-count { margin: 14px 0 0; color: var(--muted); font-size: 12px; }
+.cop-evidence { margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, .12); }
+.cop-evidence summary { width: fit-content; color: #ffb340; cursor: pointer; font-size: 13px; font-weight: 700; }
+.cop-evidence ol, .cop-recent ol { list-style: none; padding: 0; margin: 12px 0 0; }
+.cop-evidence li { padding: 14px 0; border-top: 1px solid rgba(255, 255, 255, .1); }
+.cop-evidence li:first-child { border-top: 0; }
+.cop-evidence li p { margin: 8px 0; color: var(--text); font-size: 13px; }
+.cop-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 12px 0 0; font-size: 12px; }
+.cop-facts dt { color: var(--muted); }
+.cop-facts dd { margin: 0; overflow-wrap: anywhere; }
+.cop-recent { padding: 17px 18px; }
+.cop-recent-head h3 { margin: 0; font-size: 15px; }
+.cop-recent-head button { border: 0; background: none; color: #ffb340; cursor: pointer; font-size: 12px; }
+.cop-recent li + li { border-top: 1px solid rgba(255, 255, 255, .08); }
+.cop-recent li button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 8px; border: 0; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.cop-recent li button:hover, .cop-recent li button:focus-visible, .cop-recent li button[aria-pressed="true"] { background: rgba(255, 159, 10, .12); }
+.cop-recent li strong, .cop-recent li small { display: block; }
+.cop-recent li strong { font-size: 14px; }
+.cop-recent li small { margin-top: 3px; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.cop-seal { margin: 12px 0 0; color: var(--muted); font-size: 11px; }
+@media (max-width: 760px) { .cop-dashboard { grid-template-columns: 1fr; } .cop-focus { padding: 20px; } }
