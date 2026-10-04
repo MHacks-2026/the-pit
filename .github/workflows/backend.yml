@@ -1,0 +1,42 @@
+name: Backend checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned SpacetimeDB CLI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Join-Path $env:RUNNER_TEMP 'spacetime-2.10.2.zip'
+          $bin = Join-Path $env:RUNNER_TEMP 'spacetime-bin'
+          Invoke-WebRequest 'https://github.com/clockworklabs/SpacetimeDB/releases/download/v2.10.2/spacetime-x86_64-pc-windows-msvc.zip' -OutFile $zip
+          $actual = (Get-FileHash -Algorithm SHA256 $zip).Hash
+          if ($actual -ne 'DAF7AE5C91458B0AFD5DF81FC48F5DD811E2FB2B6C61BC2958EA1BFE5A488C9A') {
+            throw 'SpacetimeDB release asset checksum mismatch.'
+          }
+          Expand-Archive -LiteralPath $zip -DestinationPath $bin
+          Copy-Item -LiteralPath (Join-Path $bin 'spacetimedb-cli.exe') -Destination (Join-Path $bin 'spacetime.exe')
+          [IO.File]::AppendAllText($env:GITHUB_ENV, "PIT_SPACETIME_CLI=$(Join-Path $bin 'spacetimedb-cli.exe')`n")
+          [IO.File]::AppendAllText($env:GITHUB_PATH, "$bin`n")
+      - name: Install workspace
+        run: corepack pnpm install --frozen-lockfile
+      - name: Unit tests
+        run: corepack pnpm test
+      - name: Build
+        run: corepack pnpm build
+      - name: Disposable database acceptance
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-local-integration.ps1

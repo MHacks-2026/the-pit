@@ -2,12 +2,17 @@ param([switch]$Load)
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$cliPath = Join-Path $repoRoot '.tools/spacetime/spacetime.exe'
-$cli = if (Test-Path -LiteralPath $cliPath) { $cliPath } else { (Get-Command spacetime -ErrorAction Stop).Source }
+$cliPath = if ($env:PIT_SPACETIME_CLI) { $env:PIT_SPACETIME_CLI } else {
+  Join-Path $env:LOCALAPPDATA 'SpacetimeDB/bin/current/spacetimedb-cli.exe'
+}
+$cli = if (Test-Path -LiteralPath $cliPath) { (Resolve-Path -LiteralPath $cliPath).Path } else {
+  (Get-Command spacetime -ErrorAction Stop).Source
+}
 $node = (Get-Command node -ErrorAction Stop).Source
 $runId = [guid]::NewGuid().ToString('N').Substring(0, 12)
 $database = "pit-it-$runId"
 $workDirectory = Join-Path $repoRoot ".tools/integration-$runId"
+$cliConfig = Join-Path $workDirectory 'cli.toml'
 $moduleDirectory = Join-Path $repoRoot 'spacetimedb/spacetimedb'
 $runnerDirectory = Join-Path $repoRoot 'apps/runner'
 $server = $null
@@ -44,15 +49,17 @@ try {
     try { $socket.ConnectAsync('127.0.0.1', 3000).Wait(200) } catch { $false } finally { $socket.Dispose() }
   } 20 'Disposable SpacetimeDB server did not become ready.'
 
-  & $cli publish $database --module-path $moduleDirectory --server local --yes --no-config
+  $identity = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:3000/v1/identity'
+  if ($identity.token -notmatch '^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$') {
+    throw 'The disposable server did not issue an admin token.'
+  }
+  $env:ADMIN_TOKEN = $identity.token
+  & $cli "--config-path=$cliConfig" login --token $env:ADMIN_TOKEN | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'Local CLI login failed.' }
+  & $cli "--config-path=$cliConfig" publish $database --module-path $moduleDirectory --server 'http://127.0.0.1:3000' --yes --no-config
   if ($LASTEXITCODE -ne 0) { throw 'Publishing the module to the disposable database failed.' }
-  $loginOutput = & $cli login show --token
-  if ($LASTEXITCODE -ne 0) { throw 'SpacetimeDB CLI login is required for local admin tests.' }
-  $token = [regex]::Match(($loginOutput -join ' '), 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+')
-  if (-not $token.Success) { throw 'SpacetimeDB CLI did not return an admin token.' }
 
   $env:PIT_TEST_DATABASE = $database
-  $env:ADMIN_TOKEN = $token.Value
   $env:NEXT_PUBLIC_SPACETIME_URI = 'ws://127.0.0.1:3000'
   $env:NEXT_PUBLIC_SPACETIME_DB = $database
   $env:PIT_RUNNER_TOKEN_FILE = Join-Path $workDirectory 'runner-tokens.json'
@@ -91,4 +98,5 @@ try {
   if ($runner -and -not $runner.HasExited) { & taskkill.exe /PID $runner.Id /T /F | Out-Null }
   if ($server -and -not $server.HasExited) { & taskkill.exe /PID $server.Id /T /F | Out-Null }
   Remove-Item -LiteralPath (Join-Path $workDirectory 'runner-tokens.json') -Force -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath $cliConfig -Force -ErrorAction SilentlyContinue
 }

@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Backend verification] 04:20 CEST, Codex -> next
+Branch: main (acceptance 7f1ae91, audit de35931, load 0c2141f pushed; CI workflow prepared)
+Done: Added a one-command localhost acceptance run with a temporary SpacetimeDB server and runner. It uses a localhost-issued admin token in an isolated CLI config, tests exchange writes, admin authorization and Cop evidence, audits balances/orders/events, and removes temporary credentials. A read-only audit passed on Maincloud (11 accounts, ~26.8k orders, ~6.7k trades, ~53.6k events, 5 alerts). A 20-client disposable load run with five bots completed 200 IOC orders (p95 28 ms on a fresh database) and passed the post-load audit. Added a Windows GitHub Actions workflow with a pinned, checksum-verified SpacetimeDB binary and no secrets.
+Not done / next: Confirm the first hosted CI run, then require `Backend checks / verify` in branch protection. T28 remains open for reconnect handling and production-sized history measurement. No matching-rule or schema changes were made.
+Gotchas: Fresh-database latency is not a production capacity estimate. The live Windows runner was not restarted. The test script requires free localhost port 3000.
+How to verify: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-local-integration.ps1 -Load`; `pnpm test`; `pnpm build`.
+Files touched: scripts/test-local-integration.ps1, apps/runner/src/{audit,audit-cli,load-test}.ts, their tests, three live acceptance tests, docs/{CLI,LOAD_TEST}.md, .github/workflows/backend.yml, HANDOFF.md.
+
+---
+
 ## [T22 part, P2] Narrator text + evasive spoofer, Claude Code -> next
 Branch: main
 Done: POST /api/narrate (apps/web/app/api/narrate/route.ts): alert evidence -> facts -> Claude (claude-opus-5-5, effort low, fallbacks "default") -> one sentence of 25 words or fewer. Template fallback when NARRATOR_ENABLED=false, LLM_API_KEY is missing, on error, refusal, timeout (8 s), rate limit (1 call / 6 s), or if the text has a number not in the facts. In-memory cache. /screen AlertFeed fetches it per new alert. runStream takes spooferParams; docs/LIMITATIONS.md has the evasion table (trade 4 s after layering or cancel 6 s after the trade: 0/50 caught) and a one-line judge answer.
