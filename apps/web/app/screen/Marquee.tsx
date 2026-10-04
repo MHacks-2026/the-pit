@@ -7,9 +7,9 @@ import { useState } from 'react';
 
 export type MarqueeItem = { id: string; kind: 'price' | 'buy' | 'sell' | 'cop' | 'news' | 'leader' | 'cta'; label: string; value?: string };
 
-function Item({ it }: { it: MarqueeItem }) {
+function Item({ it, hidden = false }: { it: MarqueeItem; hidden?: boolean }) {
   return (
-    <span className={`mq-item mq-${it.kind}`}>
+    <span className={`mq-item mq-${it.kind}`} aria-hidden={hidden}>
       <span className="mq-label">{it.label}</span>
       {it.value ? <b className="mq-value">{it.value}</b> : null}
     </span>
@@ -19,14 +19,13 @@ function Item({ it }: { it: MarqueeItem }) {
 export default function Marquee({ items }: { items: MarqueeItem[] }) {
   const [paused, setPaused] = useState(false);
   if (items.length === 0) return null;
-  // Longer lists scroll at the same speed, so tie the duration to the number of items.
-  const seconds = Math.max(40, items.length * 7);
+  const loop = Array.from({ length: 12 }, (_, index) => ({ item: items[index % items.length], hidden: index >= items.length }));
   return (
     <div className="mq" role="region" aria-label="Market ticker">
       <div className="mq-mask">
-        <div className={`mq-track${paused ? ' mq-paused' : ''}`} style={{ animationDuration: `${seconds}s` }}>
-          <div className="mq-set">{items.map(it => <Item key={it.id} it={it} />)}</div>
-          <div className="mq-set" aria-hidden="true">{items.map(it => <Item key={`d${it.id}`} it={it} />)}</div>
+        <div className={`mq-track${paused ? ' mq-paused' : ''}`}>
+          <div className="mq-set">{loop.map(({ item, hidden }, index) => <Item key={index} it={item} hidden={hidden} />)}</div>
+          <div className="mq-set" aria-hidden="true">{loop.map(({ item }, index) => <Item key={index} it={item} />)}</div>
         </div>
       </div>
       <button type="button" className="mq-btn" onClick={() => setPaused(p => !p)} aria-pressed={paused} aria-label={paused ? 'Resume ticker' : 'Pause ticker'}>

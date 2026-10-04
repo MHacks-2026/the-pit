@@ -33,17 +33,19 @@ export default function MarketWatchPanel() {
         <div><dt>Flash orders</dt><dd>{watch.flashOrders.length}</dd></div>
       </dl>
       <h3 style={{ marginTop: 20 }}>Flash orders</h3>
-      {watch.flashOrders.length === 0 ? <p className="board-sub">None in the last minute.</p> : (
-        <ul className="trade-orders">
-          {watch.flashOrders.map(order => (
-            <li key={order.id} className="tape-row">
-              <span className={order.side === 'buy' ? 'rank-up' : 'rank-down'}>{order.side === 'buy' ? 'Bid' : 'Ask'} ${usd(order.price)}</span>
-              <span>{order.amount} BTC ({order.sizeMultiple}x median), {order.distanceBps} bp from price</span>
-              <time>lived {(order.livedMs / 1000).toFixed(1)} s</time>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="flash-viewport" role="region" aria-label="Flash orders" tabIndex={0}>
+        {watch.flashOrders.length === 0 ? <p className="board-sub">None in the last minute.</p> : (
+          <ul className="trade-orders">
+            {watch.flashOrders.map(order => (
+              <li key={order.id} className="tape-row">
+                <span className={order.side === 'buy' ? 'rank-up' : 'rank-down'}>{order.side === 'buy' ? 'Bid' : 'Ask'} ${usd(order.price)}</span>
+                <span>{order.amount} BTC ({order.sizeMultiple}x median), {order.distanceBps} bp from price</span>
+                <time>lived {(order.livedMs / 1000).toFixed(1)} s</time>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

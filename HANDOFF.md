@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI terminal refinements] 16:27 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Enlarged the QR and separated the header from the ticker. Fixed the ticker to twelve equal-width slots per loop and a constant GPU-friendly animation, preserving pause and reduced-motion controls. Fixed the BTC flash-order list height with its own keyboard-scrollable area. Moved order book into the first market row, Cop into the left half below, and tape/depth into its right half. Restored the Cop focus/recent side-by-side layout on wide screens while retaining flat terminal styling. Removed “Play money only”, spaced chart tabs below bid/ask/spread, and added a teal horizontal/vertical chart crosshair with restrained accent rules.
+Not done / next: Shafir reviews local Edge at desktop and mobile widths. No main merge or push without approval. Vercel branch preview still needs branch-scoped database variable.
+Gotchas: Automated Edge visual inspection is unavailable in this environment; local route responds and browser review remains useful. Flash rows remain in the DOM but clip and scroll inside the fixed viewport.
+How to verify: `pnpm test`, `pnpm build`; refresh `http://localhost:3000/screen`, inspect ticker loop, Cop layout, chart hover, and BTC flash scrolling.
+Files touched: apps/web/app/{PageHeader.tsx,PreviewQr.tsx,screen/MarketWatchPanel.tsx,screen/Marquee.tsx,screen/PriceChart.tsx,terminal.css}, HANDOFF.md.
+
+---
+
 ## [UI terminal polish] 16:13 CEST, Codex -> team
 Branch: ui/terminal-layout-preview (local review; main unchanged)
 Done: Removed decorative subtitle, repeated join guidance, BTC explainer paragraph, footer slogan, and redundant labels. Restored a visible preview QR next to the Join this market link; the QR encodes the current page origin plus `/join`, while production retains its original QR asset. Added direct numeric price/quantity entry, larger phone step buttons, wider spacing and larger touch targets. Kept positive integer/quantity limits before order submission. Local `/screen`, `/trade`, `/join` use the isolated preview database.

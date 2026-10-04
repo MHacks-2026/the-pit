@@ -13,5 +13,5 @@ export default function PreviewQr() {
 
   const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=4&data=${encodeURIComponent(joinUrl)}`;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className="preview-qr-image" src={imageUrl} alt={`QR code to join this market at ${joinUrl}`} width={64} height={64} />;
+  return <img className="preview-qr-image" src={imageUrl} alt={`QR code to join this market at ${joinUrl}`} width={96} height={96} />;
 }
