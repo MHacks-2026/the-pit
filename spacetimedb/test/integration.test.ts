@@ -47,11 +47,29 @@ it.skipIf(!database)('commits an order, trade, cash, positions and event log ato
     expect([...maker.db.account.iter()].find(row => row.identity.toHexString() === takerHex)?.cash).toBe(9_900n);
     expect([...maker.db.position.iter()].find(row => row.owner.toHexString() === makerHex)?.qty).toBe(-1);
     expect([...maker.db.position.iter()].find(row => row.owner.toHexString() === takerHex)?.qty).toBe(1);
-    expect([...maker.db.eventLog.iter()].filter(row => row.owner.toHexString() === takerHex).map(row => row.kind)).toContain('trade');
+    const tradeEvents = [...maker.db.eventLog.iter()].filter(row => row.owner.toHexString() === takerHex && row.kind === 'trade');
+    expect(tradeEvents).toHaveLength(1);
+    expect(JSON.parse(tradeEvents[0].payload).trade.id).toBe(Number(trade.id));
 
-    const before = [...maker.db.order.iter()].length;
+    const before = {
+      orders: [...maker.db.order.iter()].length,
+      trades: [...maker.db.trade.iter()].length,
+      events: [...maker.db.eventLog.iter()].length,
+      makerCash: maker.db.account.identity.find(maker.identity!)!.cash,
+      takerCash: maker.db.account.identity.find(taker.identity!)!.cash,
+      makerQty: [...maker.db.position.iter()].find(row => row.owner.toHexString() === makerHex)!.qty,
+      takerQty: [...maker.db.position.iter()].find(row => row.owner.toHexString() === takerHex)!.qty,
+    };
     await expect(taker.reducers.placeOrder({ marketId: 1, side: 'buy', price: 100, qty: 51, tif: 'GTC' })).rejects.toThrow();
-    expect([...maker.db.order.iter()]).toHaveLength(before);
+    expect({
+      orders: [...maker.db.order.iter()].length,
+      trades: [...maker.db.trade.iter()].length,
+      events: [...maker.db.eventLog.iter()].length,
+      makerCash: maker.db.account.identity.find(maker.identity!)!.cash,
+      takerCash: maker.db.account.identity.find(taker.identity!)!.cash,
+      makerQty: [...maker.db.position.iter()].find(row => row.owner.toHexString() === makerHex)!.qty,
+      takerQty: [...maker.db.position.iter()].find(row => row.owner.toHexString() === takerHex)!.qty,
+    }).toEqual(before);
     await maker.reducers.cancelOrder({ orderId: makerOrder.id });
     await until(() => maker.db.order.id.find(makerOrder.id)?.status === 'cancelled');
     expect(maker.db.order.id.find(makerOrder.id)?.remaining).toBe(1);

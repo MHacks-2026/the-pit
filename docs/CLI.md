@@ -23,3 +23,5 @@ spacetime call the-pit-local admin_reset_market 1 --server local --yes
 ```
 
 `place_order`, `cancel_order`, and `cancel_all` are live as of T09. A market IOC uses price `2147483647` for buys or `0` for sells. `admin_raise_alert` is live as of T21; the runner supplies a JSON evidence string. `admin_settle` and `admin_reset_market` remain stubs until their later tickets.
+
+On Windows, `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-local-integration.ps1` runs all three live acceptance tests against a uniquely named, in-memory localhost database. The script needs an authenticated SpacetimeDB CLI login and free port 3000. It starts a temporary server and runner, keeps the admin credential in process environment only, and stops both and removes temporary bot tokens when finished. Test logs stay under gitignored `.tools/`. It never publishes to Maincloud.

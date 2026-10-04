@@ -45,6 +45,8 @@ it.skipIf(!database || !runnerActive)('raises one evidence-backed alert from a l
     expect(evidence.layerOrderIds).toHaveLength(3);
     expect(evidence.cancelledQty * 5).toBeGreaterThanOrEqual(evidence.totalLayeredQty * 4);
     expect(evidence.oppositeTradeId).toBeGreaterThan(0);
+    expect(evidence.layerOrderIds.every(id => spoofer.db.order.id.find(BigInt(id))?.owner.toHexString() === owner)).toBe(true);
+    expect(spoofer.db.trade.id.find(BigInt(evidence.oppositeTradeId))?.taker.toHexString()).toBe(owner);
   } finally {
     spoofer.disconnect();
     other.disconnect();

@@ -36,6 +36,8 @@ it.skipIf(!database || !adminToken)('registers a distinct bot identity, trades a
     expect([...admin.db.order.iter()].find(row => row.owner.toHexString() === owner)?.price).toBe(99);
     await admin.reducers.adminPostNews({ marketId: 1, text: 'Delayed acceptance hint' });
     await until(() => [...admin.db.news.iter()].some(row => row.text === 'Delayed acceptance hint'));
+    await expect(bot.reducers.adminPostNews({ marketId: 1, text: 'unauthorized hint' })).rejects.toThrow();
+    expect([...admin.db.news.iter()].some(row => row.text === 'unauthorized hint')).toBe(false);
   } finally {
     bot.disconnect();
     admin.disconnect();
