@@ -426,3 +426,8 @@ h1 { letter-spacing: -.04em; }
 
 /* capitalise the alert type shown by the (teammate-owned) alert feed */
 .alert-kind { text-transform: capitalize; }
+
+/* citation card (T34) */
+.cite-box { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.cite-canvas { display: block; width: 100%; max-width: 420px; height: auto; border-radius: 22px; box-shadow: 0 24px 50px -28px rgba(255, 159, 10, .45); }
+.cite-box .join-button { align-self: flex-start; }

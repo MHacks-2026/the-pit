@@ -7,6 +7,7 @@ import { reducers, tables } from '@the-pit/bindings';
 import { HACK_MARKET_ID, LiveProvider } from '../../lib/live';
 import BeatTheCop from './BeatTheCop';
 import CheatButton from './CheatButton';
+import CitationCard from './CitationCard';
 
 const MAX_ORDER_QTY = 50;
 
@@ -98,7 +99,7 @@ function TradeInner() {
     return (
       <div className="join-success">
         <p className="join-status" role="status">You haven’t joined yet.</p>
-        <Link className="join-button" href="/join">Join the pit</Link>
+        <Link className="join-button" href="/join">Join the Pit</Link>
       </div>
     );
   }
@@ -167,6 +168,8 @@ function TradeInner() {
       <CheatButton lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
 
       <BeatTheCop myHex={myHex ?? ''} cash={Number(view.me.cash)} position={view.position} mid={mid} />
+
+      <CitationCard myHex={myHex ?? ''} name={view.me.name} />
     </div>
   );
 }
