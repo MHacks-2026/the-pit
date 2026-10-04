@@ -9,7 +9,7 @@ export default function Trade() {
           <h1>THE PIT</h1>
           <p className="subtitle">Buy or sell HACK against the living exchange.</p>
         </div>
-        <div className="live-pill"><span className="live-dot" /> LIVE MARKET</div>
+        <div className="live-pill"><span className="live-dot" /> Live</div>
       </header>
       <section className="feed-shell" aria-labelledby="trade-heading">
         <div className="feed-heading">

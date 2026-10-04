@@ -53,6 +53,7 @@ function Board() {
       .filter(t => t.marketId === HACK_MARKET_ID)
       .sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? -1 : 1));
     const lastPrice = marketTrades.length ? marketTrades[marketTrades.length - 1].price : null;
+    const prevPrice = marketTrades.length > 1 ? marketTrades[marketTrades.length - 2].price : null;
     const tape = marketTrades.slice(-TAPE_ROWS).reverse();
     const chart = marketTrades.slice(-CHART_POINTS).map(t => t.price);
 
@@ -87,7 +88,7 @@ function Board() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
 
-    return { copBoard, allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard };
+    return { prevPrice, copBoard, allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard };
   }, [orders, trades, accounts, positions, alerts]);
 
   if (connectionError) {
@@ -97,7 +98,7 @@ function Board() {
     return <p className="feed-state" role="status">Connecting to the live market…</p>;
   }
 
-  const { copBoard, allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard } = view;
+  const { prevPrice, copBoard, allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, tape, chart, leaderboard } = view;
   const spread = bestBid !== null && bestAsk !== null ? bestAsk - bestBid : null;
 
   let chartPoints = '';
@@ -119,12 +120,26 @@ function Board() {
     <div className="board-grid">
       <section className="board-card" aria-label="Price">
         <h3>HACK price</h3>
-        <p className="board-price">{lastPrice === null ? '—' : lastPrice}</p>
+        <div className="board-hero">
+          <p className="board-price">{lastPrice === null ? '—' : lastPrice}</p>
+          {lastPrice !== null && prevPrice !== null && lastPrice !== prevPrice ? (
+            <span className={`board-delta ${lastPrice > prevPrice ? 'up' : 'down'}`}>
+              {lastPrice > prevPrice ? '▲' : '▼'} {Math.abs(lastPrice - prevPrice)}
+            </span>
+          ) : null}
+        </div>
         <p className="board-sub">
           Bid {bestBid ?? '—'} · Ask {bestAsk ?? '—'}{spread !== null ? ` · Spread ${spread}` : ''}
         </p>
         {chartPoints ? (
           <svg className="board-chart" viewBox={`0 0 ${CHART_W} ${CHART_H}`} role="img" aria-label="Recent trade prices">
+            <defs>
+              <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#54d7c8" stopOpacity=".32" />
+                <stop offset="1" stopColor="#54d7c8" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <polygon points={`${chartPoints} ${CHART_W},${CHART_H} 0,${CHART_H}`} fill="url(#chartFill)" />
             <polyline className="board-chart-line" points={chartPoints} />
           </svg>
         ) : (
