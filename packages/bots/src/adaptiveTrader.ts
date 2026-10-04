@@ -2,14 +2,15 @@ import { marketMakerQuotes } from './marketMaker';
 import type { NewOrder, Rng } from './types';
 
 /**
- * Adaptive AI trader: a discounted Thompson-sampling bandit over four simple strategies ("arms").
+ * Adaptive AI trader: a discounted Thompson-sampling bandit over five simple strategies ("arms").
  * Every epoch it scores the arm it just used (see AdaptiveParams.reward for the two scoring rules), then samples
  * the next arm from each arm's reward estimate. Older epochs are discounted, so it adapts when the market changes.
- * It sees only public information (book touch, recent mids) plus its own position and cash; never the hidden fundamental.
+ * It sees only public information (book touch, recent mids, the public news hint) plus its own position and cash;
+ * never the hidden fundamental itself.
  * It rests at most one order per side, so it cannot layer the book the way the Cop's spoofing rule looks for.
  */
 
-export const ADAPTIVE_ARMS = ['make', 'momentum', 'revert', 'flat'] as const;
+export const ADAPTIVE_ARMS = ['make', 'momentum', 'revert', 'flat', 'news'] as const;
 export type AdaptiveArm = typeof ADAPTIVE_ARMS[number];
 
 export interface ArmStats { weight: number; mean: number; variance: number }
@@ -26,6 +27,10 @@ export interface AdaptiveParams {
   lookback: number;
   /** Minimum mid move (ticks) before momentum/revert act. */
   threshold: number;
+  /** 'news' trades when the public fair-value hint differs from the mid by at least this many ticks... */
+  newsThreshold: number;
+  /** ...and the hint is no older than this. */
+  newsMaxAgeMs: number;
   /** Floor on each arm's reward variance (play-dollars squared), so no arm ever looks certain. */
   minVariance: number;
   /** Pseudo-epochs of confidence given to the priors. */
@@ -38,10 +43,13 @@ export interface AdaptiveParams {
   reward: 'total' | 'trading';
   /** For training/evaluation: always play this arm. */
   fixedArm?: AdaptiveArm;
+  /** Arms the bot may choose from (default: all). */
+  arms?: readonly AdaptiveArm[];
 }
 
 export const DEFAULT_ADAPTIVE_PARAMS: AdaptiveParams = {
-  epochMs: 10_000, discount: 0.9, orderQty: 5, positionCap: 150, lookback: 5, threshold: 1, minVariance: 25, priorWeight: 2, reward: 'total',
+  epochMs: 10_000, discount: 0.9, orderQty: 5, positionCap: 150, lookback: 5, threshold: 1,
+  newsThreshold: 4, newsMaxAgeMs: 15_000, minVariance: 25, priorWeight: 2, reward: 'total',
 };
 
 export interface AdaptiveState {
@@ -64,6 +72,8 @@ export interface AdaptiveView {
   cash: number;
   /** Ids of this bot's own open orders. */
   openOrderIds: readonly number[];
+  /** Latest public news hint (parseNewsHint) and how long ago it was released. */
+  news?: { estimate: number; ageMs: number };
 }
 
 export interface AdaptiveStep {
@@ -87,7 +97,8 @@ export function initialAdaptiveState(priors: Partial<Record<AdaptiveArm, ArmPrio
       ? { weight: params.priorWeight, mean: prior.mean, variance: Math.max(params.minVariance, prior.variance) }
       : { weight: 0, mean: 0, variance: params.minVariance }];
   })) as ArmTable;
-  const best = ADAPTIVE_ARMS.reduce((a, b) => (stats[b].weight > 0 && stats[b].mean > stats[a].mean ? b : a), 'make' as AdaptiveArm);
+  const arms = params.arms ?? ADAPTIVE_ARMS;
+  const best = arms.reduce((a, b) => (stats[b].weight > 0 && stats[b].mean > stats[a].mean ? b : a), arms[0]);
   return { arm: params.fixedArm ?? best, stats };
 }
 
@@ -108,11 +119,11 @@ function gaussian(rng: Rng): number {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng());
 }
 
-/** Thompson sampling: draw each arm's mean from N(mean, variance / weight) and pick the largest draw. */
-export function sampleArm(stats: ArmTable, rng: Rng): AdaptiveArm {
-  let best: AdaptiveArm = ADAPTIVE_ARMS[0];
+/** Thompson sampling: draw each allowed arm's mean from N(mean, variance / weight) and pick the largest draw. */
+export function sampleArm(stats: ArmTable, rng: Rng, arms: readonly AdaptiveArm[] = ADAPTIVE_ARMS): AdaptiveArm {
+  let best: AdaptiveArm = arms[0];
   let bestDraw = -Infinity;
-  for (const arm of ADAPTIVE_ARMS) {
+  for (const arm of arms) {
     const s = stats[arm];
     const draw = s.mean + Math.sqrt(s.variance / Math.max(s.weight, 0.05)) * gaussian(rng);
     if (draw > bestDraw) { best = arm; bestDraw = draw; }
@@ -137,6 +148,13 @@ export function armOrders(arm: AdaptiveArm, view: AdaptiveView, params: Adaptive
     if (position > 0) return ioc('sell', Math.min(params.orderQty, position));
     if (position < 0) return ioc('buy', Math.min(params.orderQty, -position));
     return [];
+  }
+  if (arm === 'news') {
+    const news = view.news;
+    if (!news || news.ageMs < 0 || news.ageMs > params.newsMaxAgeMs) return [];
+    const gap = news.estimate - view.midPrice;
+    if (Math.abs(gap) < params.newsThreshold) return [];
+    return ioc(gap > 0 ? 'buy' : 'sell', params.orderQty);
   }
   const past = view.recentMids[Math.max(0, view.recentMids.length - params.lookback)];
   if (past === undefined) return [];
@@ -164,7 +182,7 @@ export function adaptiveStep(state: AdaptiveState, view: AdaptiveView, rng: Rng,
     const scores = epochReward(state.epoch, view);
     const reward = scores[params.reward];
     const stats = updateArms(state.stats, state.arm, reward, params);
-    const arm = params.fixedArm ?? sampleArm(stats, rng);
+    const arm = params.fixedArm ?? sampleArm(stats, rng, params.arms);
     next = { arm, stats, epoch: snapshot };
     epoch = { arm: state.arm, reward, ...scores, next: arm };
   }

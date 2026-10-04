@@ -16,11 +16,15 @@ export function stepWorld(state: WorldState, nextNow: number, rng: Rng): WorldSt
 
 export interface DelayedNews { releaseAt: number; text: string }
 
-/** A delayed, noisy (+/-5 ticks) qualitative hint about the hidden fundamental. */
+/** A delayed, noisy (+/-5 ticks) estimate of the hidden fundamental, shown to everyone on the Big Screen. */
 export function worldNews(state: WorldState, rng: Rng, delayMs = 5_000): DelayedNews {
-  const noisy = state.fundamental + Math.floor(rng() * 11) - 5;
-  return {
-    releaseAt: state.now + delayMs,
-    text: noisy >= 100 ? 'A delayed signal suggests firm HACK demand.' : 'A delayed signal suggests softer HACK demand.',
-  };
+  const noisy = Math.max(1, state.fundamental + Math.floor(rng() * 11) - 5);
+  return { releaseAt: state.now + delayMs, text: `Delayed estimate: HACK fair value about ${noisy}.` };
+}
+
+/** Reads the fair-value number from a news line. Older firm/softer headlines carry no number and return null. */
+export function parseNewsHint(text: string): number | null {
+  const match = /fair value about (\d+)/.exec(text);
+  const value = match ? Number(match[1]) : NaN;
+  return Number.isSafeInteger(value) && value >= 1 ? value : null;
 }

@@ -5,35 +5,40 @@ import type { AdaptiveArm, AdaptiveParams, ArmPrior } from './adaptiveTrader';
 /** Mean and variance of each arm's 10 s epoch reward (play dollars), measured by playing that arm alone. */
 export const ADAPTIVE_PRIORS: Record<AdaptiveArm, ArmPrior> = {
   "make": {
-    "mean": -20,
-    "variance": 4364
+    "mean": -19.5,
+    "variance": 6304
   },
   "momentum": {
-    "mean": -6,
-    "variance": 585
+    "mean": -5.7,
+    "variance": 692
   },
   "revert": {
-    "mean": -2,
-    "variance": 2034
+    "mean": -1.5,
+    "variance": 1635
   },
   "flat": {
     "mean": 0,
     "variance": 0
+  },
+  "news": {
+    "mean": -0.1,
+    "variance": 21
   }
 };
 
-/** priorWeight and discount chosen on a validation slice of the training paths. */
-export const ADAPTIVE_TUNED_PARAMS: Pick<AdaptiveParams, 'reward' | 'priorWeight' | 'discount'> = {"reward":"total","priorWeight":100,"discount":0.97};
+/** Scoring rule, priorWeight, discount and news settings chosen on a validation slice of the training paths. */
+export const ADAPTIVE_TUNED_PARAMS: Pick<AdaptiveParams, 'reward' | 'priorWeight' | 'discount' | 'newsThreshold' | 'newsMaxAgeMs'> = {"newsThreshold":11,"newsMaxAgeMs":1000,"reward":"total","priorWeight":100,"discount":0.97};
 
 export const ADAPTIVE_TRAINING = {
-  "realPaths": 133,
+  "realPaths": 401,
   "syntheticSessions": 50,
   "secondsPerSession": 299,
   "epochsPerArm": {
-    "make": 5307,
-    "momentum": 5307,
-    "revert": 5307,
-    "flat": 5307
+    "make": 13079,
+    "momentum": 13079,
+    "revert": 13079,
+    "flat": 13079,
+    "news": 13079
   },
-  "data": "BTC-USD, ETH-USD, SOL-USD, LTC-USD 1-minute candles, 2026-09-24T06:31:00.000Z to 2026-10-04T06:31:00.000Z"
+  "data": "BTC-USD, ETH-USD, SOL-USD, LTC-USD 1-minute candles, 2026-09-04T06:53:00.000Z to 2026-10-04T06:53:00.000Z"
 };

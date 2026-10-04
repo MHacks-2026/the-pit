@@ -18,7 +18,7 @@ const table = (means: number[], weight = 50): ArmTable =>
 
 describe('bandit math', () => {
   it('updateArms discounts every arm and folds the reward into the chosen one', () => {
-    const next = updateArms(table([0, 0, 0, 0], 10), 'revert', 20, { ...DEFAULT_ADAPTIVE_PARAMS, discount: 0.5 });
+    const next = updateArms(table([0, 0, 0, 0, 0], 10), 'revert', 20, { ...DEFAULT_ADAPTIVE_PARAMS, discount: 0.5 });
     expect(next.make.weight).toBe(5);
     expect(next.revert.weight).toBe(6);
     expect(next.revert.mean).toBeCloseTo(20 / 6);
@@ -26,14 +26,21 @@ describe('bandit math', () => {
   });
 
   it('sampleArm is deterministic per seed and favours a clearly better arm', () => {
-    const stats = table([-20, -5, 10, 0]);
+    const stats = table([-20, -5, 10, 0, -3]);
     expect(sampleArm(stats, seeded(1))).toBe(sampleArm(stats, seeded(1)));
     const picks = Array.from({ length: 200 }, (_, i) => sampleArm(stats, seeded(i)));
     expect(picks.filter(a => a === 'revert').length).toBeGreaterThan(180);
   });
 
+  it('only samples from the allowed arms', () => {
+    const stats = table([0, 0, 0, 0, 100]);
+    const allowed = ADAPTIVE_ARMS.filter(a => a !== 'news');
+    expect(Array.from({ length: 50 }, (_, i) => sampleArm(stats, seeded(i), allowed)).includes('news')).toBe(false);
+    expect(initialAdaptiveState({ news: { mean: 9, variance: 1 } }, { ...DEFAULT_ADAPTIVE_PARAMS, arms: allowed }).arm).toBe('make');
+  });
+
   it('forgetting lets it switch when the market changes', () => {
-    let stats = table([30, 0, 0, 0], 5);
+    let stats = table([30, 0, 0, 0, 0], 5);
     for (let i = 0; i < 40; i++) stats = updateArms(stats, 'make', -30);
     expect(Array.from({ length: 100 }, (_, i) => sampleArm(stats, seeded(i))).filter(a => a === 'make').length).toBeLessThan(10);
   });
@@ -62,6 +69,18 @@ describe('armOrders', () => {
     expect(armOrders('momentum', view({ recentMids: [100], midPrice: 100 }))).toEqual([]);
   });
 
+  it('news trades toward a fresh public hint that is far enough from the mid', () => {
+    const p = { ...DEFAULT_ADAPTIVE_PARAMS, newsThreshold: 4, newsMaxAgeMs: 5_000 };
+    expect(armOrders('news', view({ news: { estimate: 106, ageMs: 1_000 } }), p))
+      .toEqual([{ marketId: 1, owner: 'ai', side: 'buy', price: 101, qty: 5, tif: 'IOC' }]);
+    expect(armOrders('news', view({ news: { estimate: 95, ageMs: 0 } }), p))
+      .toEqual([{ marketId: 1, owner: 'ai', side: 'sell', price: 99, qty: 5, tif: 'IOC' }]);
+    expect(armOrders('news', view({ news: { estimate: 103, ageMs: 0 } }), p)).toEqual([]); // gap below threshold
+    expect(armOrders('news', view({ news: { estimate: 120, ageMs: 6_000 } }), p)).toEqual([]); // stale
+    expect(armOrders('news', view(), p)).toEqual([]); // no news yet
+    expect(armOrders('news', view({ position: 150, news: { estimate: 120, ageMs: 0 } }), p)).toEqual([]); // at cap
+  });
+
   it('flat unwinds toward zero and every arm respects the position cap', () => {
     expect(armOrders('flat', view({ position: 3 }))).toEqual([{ marketId: 1, owner: 'ai', side: 'sell', price: 99, qty: 3, tif: 'IOC' }]);
     expect(armOrders('flat', view())).toEqual([]);
@@ -86,6 +105,14 @@ describe('adaptiveStep', () => {
 describe('in the simulator', () => {
   it('runStream output is unchanged by the adaptive option existing', () => {
     expect(runSession({ seed: 3, seconds: 20 }).rows).toEqual(runStream({ seed: 3, seconds: 20 }));
+  });
+
+  it('the simulator publishes delayed news the AI can act on, without changing the event log', () => {
+    const newsOnly = runSession({ seed: 4, seconds: 120, adaptive: true,
+      adaptiveParams: { fixedArm: 'news', newsThreshold: 1, newsMaxAgeMs: 15_000 } });
+    const aiOrders = newsOnly.rows.filter(r => r.kind === 'order_placed' && JSON.parse(r.payload).order.owner === ADAPTIVE_OWNER);
+    expect(aiOrders.length).toBeGreaterThan(0);
+    expect(aiOrders.every(r => JSON.parse(r.payload).order.ts >= 5_000)).toBe(true); // first hint is public at 5 s
   });
 
   it('accepts a real-data fundamental path and rejects bad ones', () => {

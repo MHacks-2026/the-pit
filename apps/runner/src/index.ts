@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DbConnection } from '@the-pit/bindings';
 import { ADAPTIVE_PRIORS, ADAPTIVE_TUNED_PARAMS, adaptiveStep, DEFAULT_ADAPTIVE_PARAMS, informedOrder, initialAdaptiveState,
-  marketMakerQuotes, noiseOrder, seeded, stepWorld, worldNews, type WorldState } from '@the-pit/bots';
+  marketMakerQuotes, noiseOrder, parseNewsHint, seeded, stepWorld, worldNews, type WorldState } from '@the-pit/bots';
 import { detectSpoofing, parseEventLog } from '@the-pit/cop';
 
 const host = process.env.NEXT_PUBLIC_SPACETIME_URI || 'ws://127.0.0.1:3000';
@@ -81,7 +81,7 @@ let adaptiveState = initialAdaptiveState(ADAPTIVE_PRIORS, adaptiveParams);
 const adaptiveRng = seeded(seed + 2000);
 const adaptiveMids: number[] = [];
 
-/** The adaptive AI sees only public data (the same snapshot as the other bots) plus its own position, cash and orders. */
+/** The adaptive AI sees only public data (the same snapshot as the other bots and the public news feed) plus its own position, cash and orders. */
 async function stepAdaptive(now: number, snapshot: ReturnType<typeof marketSnapshot>): Promise<void> {
   const bot = bots.get('adaptive');
   if (!bot) return;
@@ -91,8 +91,13 @@ async function stepAdaptive(now: number, snapshot: ReturnType<typeof marketSnaps
   const position = [...bot.db.position.iter()].find(row => row.owner.toHexString() === owner && row.marketId === 1)?.qty ?? 0;
   const openOrderIds = [...bot.db.order.iter()]
     .filter(row => row.owner.toHexString() === owner && row.status === 'open' && row.remaining > 0).map(row => Number(row.id));
+  const latestNews = [...bot.db.news.iter()].filter(row => row.marketId === 1)
+    .sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch))[0];
+  const estimate = latestNews ? parseNewsHint(latestNews.text) : null;
+  const news = latestNews && estimate !== null
+    ? { estimate, ageMs: now - Number(latestNews.ts.microsSinceUnixEpoch / 1000n) } : undefined;
   const step = adaptiveStep(adaptiveState, { marketId: 1, owner, now, ...snapshot, recentMids: adaptiveMids,
-    position, cash: Number(account.cash), openOrderIds }, adaptiveRng, adaptiveParams);
+    position, cash: Number(account.cash), openOrderIds, news }, adaptiveRng, adaptiveParams);
   adaptiveState = step.state;
   adaptiveMids.push(snapshot.midPrice);
   if (adaptiveMids.length > 60) adaptiveMids.shift();

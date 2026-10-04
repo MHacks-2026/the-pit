@@ -24,8 +24,8 @@ describe('pure bot strategies', () => {
     expect(stepWorld({ fundamental: 100, now: 1000 }, 1000, () => 0)).toEqual({ fundamental: 100, now: 1000 });
   });
 
-  it('worldNews delays a noisy qualitative hint', () => {
-    expect(worldNews({ fundamental: 102, now: 1000 }, () => 0.5)).toEqual({ releaseAt: 6000, text: 'A delayed signal suggests firm HACK demand.' });
+  it('worldNews delays a noisy fair-value hint', () => {
+    expect(worldNews({ fundamental: 102, now: 1000 }, () => 0.5)).toEqual({ releaseAt: 6000, text: 'Delayed estimate: HACK fair value about 102.' });
   });
 
   it('informedOrder trades toward a large fundamental gap', () => {

@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T31 alt] News strategy for the adaptive AI, Claude Code -> next
+Branch: main
+Done: worldNews now posts "Delayed estimate: HACK fair value about N." (same 5 s delay, +/-5 noise, same single rng draw); parseNewsHint reads it (old firm/softer lines give null). Fifth arm 'news' trades toward a fresh hint far enough from the mid. runSession simulates news (own rng; event log unchanged). Retrained on 30 days of data (572 paths): held out -30 with news, -39 without, -202 untrained, 0 flat, news alone -2; 0 Cop alerts. Arms can be switched off via AdaptiveParams.arms.
+Not done / next: Validation chose newsMaxAgeMs 1000; live, the runner sees a new news row about one tick late, so the news arm will rarely fire there (harmless). The Big Screen news text changes on the next runner restart, flag or not.
+Gotchas: Training now takes about 2.5 min (PIT_TRAIN=1). Public news is effectively priced in by the informed bot; see docs/ADAPTIVE_EVAL.md.
+How to verify: pnpm test && pnpm build; PIT_TRAIN=1 pnpm exec vitest run packages/bots/src/adaptiveTraining.test.ts (check mode)
+Files touched: packages/bots/src/{world,world.test,index.test,adaptiveTrader,adaptiveTrader.test,adaptiveTraining.test,adaptivePriors,streamSim}.ts, packages/bots/data/pricePaths.json, apps/runner/src/index.ts, docs/{ADAPTIVE_EVAL,LIMITATIONS}.md, HANDOFF.md
+
+---
+
 ## [T31 alt] Adaptive AI trader + real price paths, Claude Code -> next
 Branch: main
 Done: scripts/fetch-price-paths.mjs pulls Coinbase 1-min candles (no key) into 188 rescaled 300-step paths (packages/bots/data/pricePaths.json; raw cache in .tools/). adaptiveTrader.ts: discounted Thompson bandit over make/momentum/revert/flat, public info only, max 1 order per side, position cap 150. runSession adds fundamentalPath, adaptive and per-owner PnL (runStream unchanged, fixture identical). Training (PIT_TRAIN=1) fits priors on 70% of paths + 50 synthetic sessions, tunes on a validation slice, and writes adaptivePriors.ts + docs/ADAPTIVE_EVAL.md. Held out: -56 mean vs -229 untrained, 0 for flat (MM +124, informed -85 in the same sessions); 0 Cop alerts. Runner hook behind PIT_ADAPTIVE_BOT=true (default off).

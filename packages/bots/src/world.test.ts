@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { informedOrder } from './informedTrader';
-import { stepWorld, worldNews } from './world';
+import { parseNewsHint, stepWorld, worldNews } from './world';
 
 describe('world simulator and informed trader (T17)', () => {
   it('jumps are 5 ticks and happen only on a low draw', () => {
@@ -14,13 +14,24 @@ describe('world simulator and informed trader (T17)', () => {
   });
 
   it('news is released exactly delayMs later and reflects a noisy fundamental', () => {
-    expect(worldNews({ fundamental: 90, now: 7000 }, () => 0.5, 2000)).toEqual({ releaseAt: 9000, text: 'A delayed signal suggests softer HACK demand.' });
-    expect(worldNews({ fundamental: 96, now: 0 }, () => 0.99).text).toBe('A delayed signal suggests firm HACK demand.');
+    expect(worldNews({ fundamental: 90, now: 7000 }, () => 0.5, 2000)).toEqual({ releaseAt: 9000, text: 'Delayed estimate: HACK fair value about 90.' });
+    expect(worldNews({ fundamental: 96, now: 0 }, () => 0.99).text).toBe('Delayed estimate: HACK fair value about 101.');
+    expect(worldNews({ fundamental: 96, now: 0 }, () => 0).text).toBe('Delayed estimate: HACK fair value about 91.');
+    expect(worldNews({ fundamental: 2, now: 0 }, () => 0).text).toBe('Delayed estimate: HACK fair value about 1.');
   });
 
   it('informed trader sells into a fundamental below mid and caps size at 5', () => {
     expect(informedOrder({ marketId: 1, owner: 'i', fundamental: 90, midPrice: 100, bestBid: 99 }))
       .toEqual({ marketId: 1, owner: 'i', side: 'sell', price: 99, qty: 5, tif: 'IOC' });
     expect(informedOrder({ marketId: 1, owner: 'i', fundamental: 104, midPrice: 100, threshold: 5 })).toBeNull();
+  });
+});
+
+describe('parseNewsHint', () => {
+  it('reads the fair value from new headlines and ignores old or malformed ones', () => {
+    expect(parseNewsHint('Delayed estimate: HACK fair value about 112.')).toBe(112);
+    expect(parseNewsHint(worldNews({ fundamental: 87, now: 0 }, () => 0.5).text)).toBe(87);
+    expect(parseNewsHint('A delayed signal suggests firm HACK demand.')).toBeNull();
+    expect(parseNewsHint('fair value about 0')).toBeNull();
   });
 });

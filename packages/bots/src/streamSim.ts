@@ -5,7 +5,7 @@ import { marketMakerQuotes } from './marketMaker';
 import { noiseOrder } from './noiseTrader';
 import { DEFAULT_SPOOFER_PARAMS, initialSpooferState, spooferStep, type SpooferParams } from './spoofer';
 import type { Rng } from './types';
-import { stepWorld } from './world';
+import { parseNewsHint, stepWorld, worldNews, type DelayedNews } from './world';
 
 /** One Spacetime event_log row; same shape as EventLogInput in @the-pit/cop (payload = JSON.stringify(EngineEvent)). */
 export interface EventLogRow { id: number; kind: string; marketId: number; payload: string }
@@ -93,6 +93,11 @@ export interface SessionResult {
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
+function newsView(news: DelayedNews | undefined, now: number) {
+  const estimate = news ? parseNewsHint(news.text) : null;
+  return news && estimate !== null ? { news: { estimate, ageMs: now - news.releaseAt } } : {};
+}
+
 /** Runs the real bots through matchOrder and returns the event_log rows. Same options give the same rows. */
 export function runStream(options: StreamOptions): EventLogRow[] {
   return runSession(options).rows;
@@ -111,6 +116,10 @@ export function runSession({ seed, seconds = 60, spoofer = false, spooferParams,
   const rng = seeded(seed);
   const spooferRng = seeded(seed + 1000);
   const adaptiveRng = seeded(seed + 2000);
+  // News like apps/runner: every 10 s, released 5 s later. Own rng, and news writes no event_log rows.
+  const newsRng = seeded(seed + 3000);
+  const pendingNews: DelayedNews[] = [];
+  let released: DelayedNews | undefined;
   const stepMs = gcd(1000, mmRequoteMs);
   let world = { fundamental: fundamentalPath?.[0] ?? 100, now: 0 };
   const spoofParams = { ...DEFAULT_SPOOFER_PARAMS, ...spooferParams };
@@ -125,6 +134,10 @@ export function runSession({ seed, seconds = 60, spoofer = false, spooferParams,
     world = fundamentalPath
       ? { fundamental: fundamentalPath[Math.min(now / 1000, fundamentalPath.length - 1)], now }
       : stepWorld(world, now, rng);
+    if (adaptive) {
+      if (now % 10_000 === 0) pendingNews.push(worldNews(world, newsRng));
+      while (pendingNews.length && pendingNews[0].releaseAt <= now) released = pendingNews.shift();
+    }
     for (const owner of NOISE_OWNERS) {
       const order = noiseOrder({ marketId: 1, owner, ...sim.touch(), elapsedMs: 1000 }, rng);
       if (order) sim.place(order, now);
@@ -141,7 +154,8 @@ export function runSession({ seed, seconds = 60, spoofer = false, spooferParams,
       const touch = sim.touch();
       const account = sim.book.accounts[ADAPTIVE_OWNER];
       const step = adaptiveStep(ai, { marketId: 1, owner: ADAPTIVE_OWNER, now, ...touch, recentMids: mids,
-        position: account.positions[1]?.qty ?? 0, cash: account.cash, openOrderIds: sim.open(ADAPTIVE_OWNER).map(o => o.id) },
+        position: account.positions[1]?.qty ?? 0, cash: account.cash, openOrderIds: sim.open(ADAPTIVE_OWNER).map(o => o.id),
+        ...newsView(released, now) },
       adaptiveRng, aParams);
       for (const id of step.cancel) sim.cancel(id, ADAPTIVE_OWNER, now);
       for (const order of step.place) sim.place(order, now);

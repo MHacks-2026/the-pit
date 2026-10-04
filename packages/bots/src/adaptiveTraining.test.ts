@@ -26,8 +26,12 @@ const isValidation = (index: number) => index < trainPaths.length && index % 5 =
 const GRID = (['total', 'trading'] as const).flatMap(reward =>
   [2, 10, 30, 100].flatMap(priorWeight => [0.9, 0.97].map(discount => ({ reward, priorWeight, discount }))));
 const testSessions: Session[] = testPaths.map((fundamentalPath, i) => ({ seed: 5_000 + i, fundamentalPath }));
+// News strategy settings: how big a gap between the public hint and the mid, and how fresh the hint must be.
+const NEWS_GRID = [4, 6, 8, 11].flatMap(newsThreshold => [1_000, 5_000, 15_000].map(newsMaxAgeMs => ({ newsThreshold, newsMaxAgeMs })));
 
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+// Long synchronous loops starve Vitest's worker RPC ("Timeout calling onTaskUpdate"); yield between batches.
+const breathe = () => new Promise<void>(resolve => setImmediate(resolve));
 const variance = (xs: number[]) => mean(xs.map(x => (x - mean(xs)) ** 2));
 
 function adaptiveAlerts(rows: ReturnType<typeof runSession>['rows']): number {
@@ -41,9 +45,27 @@ function adaptiveAlerts(rows: ReturnType<typeof runSession>['rows']): number {
 
 describe.runIf(process.env.PIT_TRAIN)('adaptive trader training (PIT_TRAIN=1)', () => {
   it('learns per-arm priors on the training split and reports held-out results', async () => {
+    const validation = trainSessions.filter((_, i) => isValidation(i));
+
+    // 0. Pick the news strategy's settings on the validation slice (news played alone).
+    const newsRows: { g: typeof NEWS_GRID[number]; score: number }[] = [];
+    let news = NEWS_GRID[0];
+    let bestNews = -Infinity;
+    for (const g of NEWS_GRID) {
+      await breathe();
+      const score = mean(validation.map(s =>
+        runSession({ ...s, seconds: SECONDS, adaptive: true, adaptiveParams: { ...g, fixedArm: 'news' } }).pnl[ADAPTIVE_OWNER]));
+      newsRows.push({ g, score });
+      if (score > bestNews) { bestNews = score; news = g; }
+    }
+
     // 1. Play each arm alone on every training session; its epoch rewards are that arm's evidence.
-    const rewardsBySession = ADAPTIVE_ARMS.map(arm => trainSessions.map(s =>
-      runSession({ ...s, seconds: SECONDS, adaptive: true, adaptiveParams: { fixedArm: arm } }).adaptiveEpochs));
+    const rewardsBySession: ReturnType<typeof runSession>['adaptiveEpochs'][][] = [];
+    for (const arm of ADAPTIVE_ARMS) {
+      await breathe();
+      rewardsBySession.push(trainSessions.map(s =>
+        runSession({ ...s, seconds: SECONDS, adaptive: true, adaptiveParams: { ...news, fixedArm: arm } }).adaptiveEpochs));
+    }
     // Priors are fitted under the same scoring rule the bot will use.
     const priorsFrom = (rule: 'total' | 'trading', use: (index: number) => boolean) => Object.fromEntries(ADAPTIVE_ARMS.map((arm, a) => {
       const rewards = rewardsBySession[a].filter((_, i) => use(i)).flat().map(e => e[rule]);
@@ -52,31 +74,34 @@ describe.runIf(process.env.PIT_TRAIN)('adaptive trader training (PIT_TRAIN=1)', 
 
     // 2. Pick priorWeight and discount on the validation slice, using priors fitted without it.
     const fitPriors = { total: priorsFrom('total', i => !isValidation(i)), trading: priorsFrom('trading', i => !isValidation(i)) };
-    const validation = trainSessions.filter((_, i) => isValidation(i));
     const gridRows: string[] = [];
     let chosen = GRID[0];
     let bestScore = -Infinity;
     for (const g of GRID) {
+      await breathe();
       const score = mean(validation.map(s =>
-        runSession({ ...s, seconds: SECONDS, adaptive: true, adaptiveParams: g, adaptivePriors: fitPriors[g.reward] }).pnl[ADAPTIVE_OWNER]));
+        runSession({ ...s, seconds: SECONDS, adaptive: true, adaptiveParams: { ...news, ...g }, adaptivePriors: fitPriors[g.reward] }).pnl[ADAPTIVE_OWNER]));
       gridRows.push(`| ${g.reward} | ${g.priorWeight} | ${g.discount} | ${Math.round(score)} |`);
       if (score > bestScore) { bestScore = score; chosen = g; }
     }
 
     // 3. Final priors on the whole training split.
     const priors = priorsFrom(chosen.reward, () => true);
+    const tuned = { ...news, ...chosen };
     const epochCounts = Object.fromEntries(ADAPTIVE_ARMS.map((arm, a) => [arm, rewardsBySession[a].flat().length]));
 
     // 2. Held-out evaluation on real paths the priors never saw.
     const configs: { name: string; params?: Partial<AdaptiveParams>; priors?: typeof priors }[] = [
-      { name: 'Adaptive AI (trained priors, tuned)', params: chosen, priors },
-      { name: 'Adaptive AI (no priors)' },
-      ...ADAPTIVE_ARMS.map(arm => ({ name: `Fixed: ${arm}`, params: { fixedArm: arm } })),
+      { name: 'Adaptive AI (trained priors, tuned)', params: tuned, priors },
+      { name: 'Adaptive AI (trained, news strategy switched off)', params: { ...tuned, arms: ADAPTIVE_ARMS.filter(a => a !== 'news') }, priors },
+      { name: 'Adaptive AI (no priors)', params: news },
+      ...ADAPTIVE_ARMS.map(arm => ({ name: `Fixed: ${arm}`, params: { ...news, fixedArm: arm } })),
     ];
     const rows: string[] = [];
     let aiAlerts = 0;
     let otherBots: Record<string, number[]> = {};
     for (const config of configs) {
+      await breathe();
       const pnls: number[] = [];
       const armUse: Record<string, number> = {};
       for (const session of testSessions) {
@@ -107,8 +132,8 @@ describe.runIf(process.env.PIT_TRAIN)('adaptive trader training (PIT_TRAIN=1)', 
       '/** Mean and variance of each arm\'s 10 s epoch reward (play dollars), measured by playing that arm alone. */',
       `export const ADAPTIVE_PRIORS: Record<AdaptiveArm, ArmPrior> = ${JSON.stringify(priors, null, 2)};`,
       '',
-      '/** priorWeight and discount chosen on a validation slice of the training paths. */',
-      `export const ADAPTIVE_TUNED_PARAMS: Pick<AdaptiveParams, 'reward' | 'priorWeight' | 'discount'> = ${JSON.stringify(chosen)};`,
+      '/** Scoring rule, priorWeight, discount and news settings chosen on a validation slice of the training paths. */',
+      `export const ADAPTIVE_TUNED_PARAMS: Pick<AdaptiveParams, 'reward' | 'priorWeight' | 'discount' | 'newsThreshold' | 'newsMaxAgeMs'> = ${JSON.stringify(tuned)};`,
       '',
       `export const ADAPTIVE_TRAINING = ${JSON.stringify({
         realPaths: trainPaths.length, syntheticSessions: SYNTHETIC_SEEDS.length, secondsPerSession: SECONDS, epochsPerArm: epochCounts,
@@ -123,7 +148,10 @@ describe.runIf(process.env.PIT_TRAIN)('adaptive trader training (PIT_TRAIN=1)', 
         `these results are on ${testPaths.length} **held-out** real paths (${SECONDS} s each). Data: ${meta.symbols.map(s => s.symbol).join(', ')} ` +
         `1-minute candles from Coinbase, ${meta.range.start.slice(0, 10)} to ${meta.range.end.slice(0, 10)}, rescaled to HACK ticks (see packages/bots/data/pricePaths.json).`,
       '',
-      'Profit is mark-to-market in play dollars per session. The AI sees only public information (book, recent mids, its own position).',
+      'The AI sees only public information: the book, recent mids, its own position, and the public news hint ' +
+        '("Delayed estimate: HACK fair value about N", every 10 s, released 5 s late, +/-5 ticks of noise).',
+      '',
+      'Profit is mark-to-market in play dollars per session.',
       '',
       '| Strategy | Mean profit | Median | Worst | Best | Strategy mix |',
       '|---|---|---|---|---|---|',
@@ -137,10 +165,22 @@ describe.runIf(process.env.PIT_TRAIN)('adaptive trader training (PIT_TRAIN=1)', 
       '|---|---|---|---|',
       ...gridRows.map(r => (r.startsWith(`| ${chosen.reward} | ${chosen.priorWeight} | ${chosen.discount} |`) ? r.replace(/\| (-?\d+) \|$/, '| **$1** (chosen) |') : r)),
       '',
-      'Version note (held-out results we saw before this version, reported so nothing is cherry-picked): ' +
-        'v1 scored epochs on total equity change with prior weight 2: -258 (trained), -229 (no priors). ' +
-        "v2 scored on the epoch's own trading only and tuned prior weight/discount on validation: -341 (trained, median -90), -954 (no priors). " +
-        'This version lets the validation slice choose the scoring rule as well; the held-out paths were not used for any choice.',
+      'News strategy settings, chosen the same way (news played alone on the validation paths; gap = hint minus mid, in ticks):',
+      '',
+      '| Min gap | Max hint age | Validation mean profit |',
+      '|---|---|---|',
+      ...newsRows.map(({ g, score }) => `| ${g.newsThreshold} | ${g.newsMaxAgeMs / 1000} s | ${g === news ? `**${Math.round(score)}** (chosen)` : Math.round(score)} |`),
+      '',
+      'Finding: the public news hint (released 5 s late, +/-5 ticks of noise) carries little or no edge here, because the informed bot ' +
+        'trades on the hidden value in real time and the price has usually moved before the hint is public. Stricter settings lose less ' +
+        'mainly by trading less. Compare the two trained-AI rows above to see whether having the news strategy helped.',
+      '',
+      'Version history (held-out results seen before this version, listed so nothing is cherry-picked): ' +
+        'v1 (10 days, 4 strategies, total-equity scoring, prior weight 2): -258 trained, -229 no priors. ' +
+        "v2 (scored on the epoch's own trading): -341 trained, -954 no priors. " +
+        'v3 (validation also chooses the scoring rule): -56 trained, -229 no priors, 0 flat, on 55 held-out paths. ' +
+        'This version (v4) uses 30 days of data and adds the news strategy, so its held-out set is new and larger; ' +
+        'the earlier numbers are not directly comparable. Held-out paths were not used for any choice.',
       '',
       'Other bots in the same sessions (trained-priors run):',
       '',
