@@ -33,7 +33,7 @@ Gates: G1 2:15 PM target (2:30 hard) | G2 8:00 PM | G3 12:00 AM | G4 6:00 AM fre
 
 ## Phase 4: integration (8:00 PM to midnight)
 - [x] T21 BE+YOU: Cop runner calls admin_raise_alert; alert feed UI
-- [ ] T22 PI (CX/CC): LLM explanation from evidence JSON; narrator with ElevenLabs; cache + rate limit
+- [x] T22 PI (CX/CC): LLM explanation from evidence JSON; narrator with ElevenLabs; cache + rate limit (ElevenLabs voice live; text uses the grounded template until an LLM key is set)
 - [x] T23 FE (CU): Try-to-cheat button (preset layering macro)
 - [x] T24 PI+FE: join flow polish (QR on Big Screen, starting cash, admin reset-market)
 - [x] T25 FE (CU): leaderboard (mark-to-market PnL), robot badge for bots
