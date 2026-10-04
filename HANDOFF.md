@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [D9] Bots and Cop inside SpacetimeDB, Claude Code -> next
+Branch: main (module change NOT yet published to Maincloud; in-database bots are off until admin_bots_start)
+Done: packages/bots/src/liveTick.ts (pure, tested) plans each tick like the runner. Module: scheduled bot_tick (1 s), admin_bots_start(adaptive)/admin_bots_stop, sim_state, alert_incident, event_log.ts index; Cop runs in cancel_order/cancel_all (scoped to the canceller) and per tick; bots' rejected orders are skipped, not fatal. Local verification: market ran 15+ min with no runner (590 trades, 47 news, open orders bounded), audit passed, live spoofs caught 8/8 in 7-10 ms with 0 alerts on bots, cop-path test passes in 31 ms on a quiet DB, in-place upgrade over a running bot DB worked. Latency in docs/LOAD_TEST.md.
+Not done / next: Switch Maincloud (docs/RUNNER.md, "In-database bots"): stop runner task, publish without --delete-data, call admin_bots_start. Then delete the runner bot loop. cop-path.test.ts hard-codes prices near 100, so run it on a quiet database (bots off); its PIT_COP_RUNNER_ACTIVE flag no longer needs a runner.
+Gotchas: Never run the runner and the in-database bots together. Cancel cost grows with the last 30 s of market activity (1.8 ms live, ~49 ms under a 10k-order flood); fix is an (owner, ts) index. The module now depends on @the-pit/bots and @the-pit/cop.
+How to verify: pnpm test && pnpm build; local server + publish + `spacetime call <db> admin_bots_start true`
+Files touched: spacetimedb/spacetimedb/{src/index.ts,package.json}, packages/bots/src/{liveTick,liveTick.test,index}.ts, packages/cop/src/marketWatch.ts, pnpm-lock.yaml, docs/{RUNNER,LOAD_TEST,DECISIONS}.md, HANDOFF.md
+
+---
+
 ## [Real-data eval] Tournament + Cop on real price paths, Claude Code -> next
 Branch: main
 Done: packages/bots/src/realDataEval.test.ts (PIT_EVAL_REAL=1, ~25 s) runs all bots + trained AI on the 171 held-out real paths, with/without the spoofer and both evasive variants, and writes docs/REAL_DATA_EVAL.md. Cop: 171/171 caught, 0 false alarms (MM and AI included); evasive 0/171. Leaderboard (no spoofer): MM +102, noise +8..+16, AI -52, informed -88. With spoofer: spoofer +67, AI -124.

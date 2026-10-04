@@ -17,3 +17,24 @@ To start it after every Windows logon, run `powershell -NoProfile -ExecutionPoli
 ## Adaptive AI trader (optional)
 
 Set `PIT_ADAPTIVE_BOT=true` to register one more bot, `adaptive`, which runs the trained bandit from `packages/bots/src/adaptiveTrader.ts` with the priors in `adaptivePriors.ts`. It reads only the public book snapshot plus its own position, cash and orders, and logs each strategy switch (`adaptive: make scored -12, next flat`). Default is off; the existing bots behave exactly as before. To retrain: `node scripts/fetch-price-paths.mjs` (optional, refreshes the data), then `PIT_TRAIN=1 pnpm exec vitest run -u packages/bots/src/adaptiveTraining.test.ts`.
+
+## In-database bots and Cop (replaces this runner)
+
+The SpacetimeDB module can now run the bots and the Market Cop itself, so no PC has to stay awake.
+`admin_bots_start(adaptive)` creates six bot accounts (fixed `b0b0…` identities, marked as bots), cancels leftover orders
+from older bot accounts (the runner's), and schedules `bot_tick` every second. Each tick plans with
+`planLiveTick` from `packages/bots` (world, delayed news, market maker requote, noise, informed, optional adaptive AI),
+executes it, and runs the Cop. The Cop also runs inside every `cancel_order` and `cancel_all`, so a spoofing alert is
+written in the same transaction as the cancel that completes it. `admin_bots_stop()` stops the schedule and cancels
+the bots' orders.
+
+Switching the shared database over (needs the database owner's CLI login):
+
+1. Stop the runner: `Stop-ScheduledTask -TaskName ThePitCloudRunner` (and stop any other runner).
+2. Publish in place, without `--delete-data`: `spacetime publish the-pit-mhacks-2026 --module-path spacetimedb/spacetimedb --server maincloud`.
+3. Start the bots: `spacetime call the-pit-mhacks-2026 admin_bots_start true --server maincloud` (`false` = no adaptive AI).
+4. Check `/screen`: trades and news keep flowing; the bots appear with robot badges.
+
+Rollback: `spacetime call the-pit-mhacks-2026 admin_bots_stop --server maincloud`, then start the runner task again.
+Never run both: the in-database bots and the runner's bots would double the market.
+

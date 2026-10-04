@@ -263,6 +263,12 @@ importers:
 
   spacetimedb/spacetimedb:
     dependencies:
+      '@the-pit/bots':
+        specifier: workspace:*
+        version: link:../../packages/bots
+      '@the-pit/cop':
+        specifier: workspace:*
+        version: link:../../packages/cop
       '@the-pit/engine':
         specifier: workspace:*
         version: link:../../packages/engine

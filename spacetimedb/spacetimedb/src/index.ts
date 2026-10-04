@@ -1,4 +1,7 @@
-import { schema, table, t, SenderError, type ReducerCtx } from 'spacetimedb/server';
+import { schema, table, t, SenderError, Range, type ReducerCtx } from 'spacetimedb/server';
+import { Identity, ScheduleAt, Timestamp } from 'spacetimedb';
+import { initialLiveState, LIVE_BOTS, planLiveTick, type LiveBot, type LiveState, type LiveView } from '@the-pit/bots';
+import { detectSpoofing, parseEventLog, type CopEvent } from '@the-pit/cop';
 import { matchOrder, cancelOrder as cancelBookOrder, type Book, type MatchResult } from '@the-pit/engine';
 
 const account = table({ public: true }, {
@@ -26,7 +29,8 @@ const position = table({ public: true }, {
 });
 const eventLog = table({ public: true }, {
   id: t.u64().primaryKey().autoInc(), kind: t.string(), owner: t.identity(),
-  marketId: t.u32(), payload: t.string(), ts: t.timestamp(),
+  // Indexed so the in-database Cop reads only the last 30 seconds of events.
+  marketId: t.u32(), payload: t.string(), ts: t.timestamp().index('btree'),
 });
 const alert = table({ public: true }, {
   id: t.u64().primaryKey().autoInc(), owner: t.identity(), kind: t.string(),
@@ -39,12 +43,17 @@ const adminConfig = table({ name: 'admin_config' }, { ownerIdentity: t.identity(
 const idCounter = table({ name: 'id_counter' }, { id: t.u32().primaryKey(), nextId: t.u64() });
 // Last trade price per market, kept up to date by persistResult so no reducer has to scan the trade table.
 const marketState = table({ name: 'market_state' }, { marketId: t.u32().primaryKey(), lastTradePrice: t.i32() });
+// In-database bots: their planning state (JSON), and the schedule row that fires bot_tick every second.
+const simState = table({ name: 'sim_state' }, { id: t.u32().primaryKey(), state: t.string() });
+const botTickSchedule = table({ name: 'bot_tick_schedule' }, { scheduledId: t.u64().primaryKey().autoInc(), scheduledAt: t.scheduleAt() });
+// Incidents already alerted on, so the in-database Cop (and admin_raise_alert) never alert twice.
+const alertIncident = table({ name: 'alert_incident' }, { incidentKey: t.string().primaryKey() });
 
-const spacetimedb = schema({ account, market, order, trade, position, eventLog, alert, news, adminConfig, idCounter, marketState });
+const spacetimedb = schema({ account, market, order, trade, position, eventLog, alert, news, adminConfig, idCounter, marketState,
+  simState, botTickSchedule, alertIncident });
 export default spacetimedb;
 
 type ModuleCtx = ReducerCtx<typeof spacetimedb.schemaType>;
-type Identity = ModuleCtx['sender'];
 
 function requireAdmin(ctx: ModuleCtx): void {
   const admin = ctx.db.adminConfig.iter().next().value;
@@ -176,6 +185,85 @@ function persistResult(ctx: ModuleCtx, result: MatchResult, counter: { value: bi
   ctx.db.idCounter.id.update({ ...stored, nextId: counter.value });
 }
 
+
+const nowMs = (ctx: ModuleCtx) => Number(ctx.timestamp.microsSinceUnixEpoch / 1000n);
+
+interface OrderInput { marketId: number; side: 'buy' | 'sell'; price: number; qty: number; tif: 'GTC' | 'IOC' }
+
+/** Match and persist one order for `owner`. Bots pass throwOnReject=false so one rejected order cannot undo a whole tick. */
+function submitOrder(ctx: ModuleCtx, owner: Identity, order: OrderInput, throwOnReject: boolean): boolean {
+  const marketRow = ctx.db.market.id.find(order.marketId);
+  if (!marketRow || marketRow.status !== 'open') {
+    if (throwOnReject) throw new SenderError('market not open');
+    return false;
+  }
+  const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
+  const { book, identities } = loadBook(ctx, owner);
+  const result = matchOrder(book, { ...order, owner: owner.toHexString() }, { now: nowMs(ctx), nextId: () => allocate(counter) });
+  if (!throwOnReject && result.events.some(event => event.kind === 'rejected')) return false;
+  persistResult(ctx, result, counter, identities);
+  return true;
+}
+
+function cancelFor(ctx: ModuleCtx, owner: Identity, orderId: number, throwOnReject: boolean): boolean {
+  const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
+  const { book, identities } = loadBook(ctx, owner);
+  const result = cancelBookOrder(book, orderId, owner.toHexString(), { now: nowMs(ctx), nextId: () => allocate(counter) });
+  if (!throwOnReject && result.events.some(event => event.kind === 'rejected')) return false;
+  persistResult(ctx, result, counter, identities);
+  return true;
+}
+
+/**
+ * The Market Cop, inside the transaction: reads the last 30 s of event_log through the ts index and raises any new
+ * spoofing alert in the same transaction as the cancel that completed it. A spoof completes only when most layers are
+ * cancelled after the opposite trade, so this runs after cancels (and once per bot tick), not after every order.
+ * With `actor`, only that account's events plus trades are parsed: the rule judges one account at a time, so other
+ * accounts' order events cannot change its verdict, and skipping them keeps the check cheap when the market is busy.
+ */
+function copCheck(ctx: ModuleCtx, actor?: Identity): void {
+  const from = Timestamp.fromDate(new Date(nowMs(ctx) - 30_000));
+  const events: CopEvent[] = [];
+  for (const row of ctx.db.eventLog.ts.filter(new Range<Timestamp>({ tag: 'included', value: from }, { tag: 'unbounded' }))) {
+    if (actor && row.kind !== 'trade' && !row.owner.isEqual(actor)) continue;
+    const event = parseEventLog({ id: Number(row.id), kind: row.kind, marketId: row.marketId, payload: row.payload });
+    if (event) events.push(event);
+  }
+  const actorHex = actor?.toHexString();
+  for (const candidate of detectSpoofing(events, nowMs(ctx))) {
+    if (actorHex && candidate.owner !== actorHex) continue;
+    const key = candidate.evidence.incidentKey;
+    if (ctx.db.alertIncident.incidentKey.find(key)) continue;
+    const owner = Identity.fromString(candidate.owner);
+    if (!ctx.db.account.identity.find(owner)) continue;
+    ctx.db.alertIncident.insert({ incidentKey: key });
+    ctx.db.alert.insert({ id: 0n, owner, kind: candidate.kind, score: candidate.score,
+      evidence: JSON.stringify(candidate.evidence), narration: undefined, ts: ctx.timestamp });
+  }
+}
+
+/** Fixed, clearly synthetic identities for the in-database bots (real identities never start with b0b0). */
+function botIdentity(bot: LiveBot): Identity {
+  return Identity.fromString(`b0b0${(LIVE_BOTS.indexOf(bot) + 1).toString(16).padStart(60, '0')}`);
+}
+
+interface StoredSim { live: LiveState; latestNews?: { text: string; postedAt: number } }
+const loadSim = (ctx: ModuleCtx): StoredSim | null => {
+  const row = ctx.db.simState.id.find(1);
+  return row ? JSON.parse(row.state) as StoredSim : null;
+};
+function saveSim(ctx: ModuleCtx, sim: StoredSim): void {
+  const state = JSON.stringify(sim);
+  if (ctx.db.simState.id.find(1)) ctx.db.simState.id.update({ id: 1, state });
+  else ctx.db.simState.insert({ id: 1, state });
+}
+
+function openOrdersOf(ctx: ModuleCtx, owner: Identity): number[] {
+  const ids: number[] = [];
+  for (const row of ctx.db.order.status.filter('open')) if (row.remaining > 0 && row.owner.isEqual(owner)) ids.push(Number(row.id));
+  return ids;
+}
+
 export const init = spacetimedb.init(ctx => {
   ctx.db.adminConfig.insert({ ownerIdentity: ctx.sender });
   ctx.db.market.insert({ id: 1, symbol: 'HACK', kind: 'index', tick: 1, status: 'open' });
@@ -197,14 +285,7 @@ export const placeOrder = spacetimedb.reducer(
     const marketRow = ctx.db.market.id.find(marketId);
     if (!marketRow || marketRow.status !== 'open') throw new SenderError('market not open');
     if (price !== 0 && price !== 2_147_483_647 && price % marketRow.tick !== 0) throw new SenderError('price not on tick');
-    const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
-    const { book, identities } = loadBook(ctx, ctx.sender);
-    const result = matchOrder(
-      book,
-      { marketId, owner: ctx.sender.toHexString(), side, price, qty, tif },
-      { now: Number(ctx.timestamp.microsSinceUnixEpoch / 1000n), nextId: () => allocate(counter) }
-    );
-    persistResult(ctx, result, counter, identities);
+    submitOrder(ctx, ctx.sender, { marketId, side, price, qty, tif }, true);
   }
 );
 
@@ -215,6 +296,7 @@ export const cancelOrder = spacetimedb.reducer({ orderId: t.u64() }, (ctx, { ord
     now: Number(ctx.timestamp.microsSinceUnixEpoch / 1000n), nextId: () => allocate(counter),
   });
   persistResult(ctx, result, counter, identities);
+  copCheck(ctx, ctx.sender);
 });
 export const cancelAll = spacetimedb.reducer(ctx => {
   const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
@@ -230,6 +312,7 @@ export const cancelAll = spacetimedb.reducer(ctx => {
     events.push(...result.events);
   }
   persistResult(ctx, { book, trades: [], events }, counter, loaded.identities);
+  copCheck(ctx, ctx.sender);
 });
 export const adminSettle = spacetimedb.reducer({ marketId: t.u32(), outcome: t.bool() }, ctx => {
   requireAdmin(ctx);
@@ -262,6 +345,8 @@ export const adminRaiseAlert = spacetimedb.reducer(
     try { parsed = JSON.parse(evidence) as Record<string, unknown>; } catch { throw new SenderError('invalid alert evidence JSON'); }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new SenderError('alert evidence must be an object');
     if (typeof parsed.incidentKey === 'string') {
+      if (ctx.db.alertIncident.incidentKey.find(parsed.incidentKey)) return;
+      ctx.db.alertIncident.insert({ incidentKey: parsed.incidentKey });
       for (const row of ctx.db.alert.iter()) {
         if (row.owner.toHexString() !== owner.toHexString() || row.kind !== kind) continue;
         try {
@@ -279,3 +364,74 @@ export const adminPostNews = spacetimedb.reducer({ marketId: t.u32(), text: t.st
   if (!ctx.db.market.id.find(marketId)) throw new SenderError('market not found');
   ctx.db.news.insert({ id: 0n, marketId, text: text.trim(), ts: ctx.timestamp });
 });
+
+/** Start the in-database bots (replaces apps/runner). Stop the old runner first: its bots' leftover orders are cancelled here. */
+export const adminBotsStart = spacetimedb.reducer({ adaptive: t.bool() }, (ctx, { adaptive }) => {
+  requireAdmin(ctx);
+  const bots = LIVE_BOTS.filter(bot => adaptive || bot !== 'adaptive');
+  const mine = new Set(bots.map(bot => botIdentity(bot).toHexString()));
+  for (const bot of bots) {
+    const identity = botIdentity(bot);
+    const existing = ctx.db.account.identity.find(identity);
+    if (existing) ctx.db.account.identity.update({ ...existing, name: bot, isBot: true });
+    else ctx.db.account.insert({ identity, name: bot, cash: 10_000n, isBot: true, createdAt: ctx.timestamp });
+  }
+  for (const row of [...ctx.db.account.iter()]) {
+    if (!row.isBot || mine.has(row.identity.toHexString())) continue;
+    for (const id of openOrdersOf(ctx, row.identity)) cancelFor(ctx, row.identity, id, false);
+  }
+  saveSim(ctx, { live: initialLiveState(nowMs(ctx), adaptive) });
+  if (![...ctx.db.botTickSchedule.iter()].length) {
+    ctx.db.botTickSchedule.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.interval(1_000_000n) });
+  }
+});
+
+/** Stop the in-database bots and cancel their open orders. */
+export const adminBotsStop = spacetimedb.reducer(ctx => {
+  requireAdmin(ctx);
+  for (const row of [...ctx.db.botTickSchedule.iter()]) ctx.db.botTickSchedule.scheduledId.delete(row.scheduledId);
+  for (const bot of LIVE_BOTS) {
+    const identity = botIdentity(bot);
+    for (const id of openOrdersOf(ctx, identity)) cancelFor(ctx, identity, id, false);
+  }
+});
+
+/** One bot tick, run by the scheduler every second: plan with packages/bots, execute, then run the Cop. */
+export const botTick = spacetimedb.reducer({ onSchedule: botTickSchedule }, { arg: botTickSchedule.rowType }, ctx => {
+  if (!ctx.sender.isEqual(ctx.identity)) throw new SenderError('bot_tick runs on the schedule only');
+  const sim = loadSim(ctx);
+  if (!sim) return;
+  const now = nowMs(ctx);
+  const marketId = 1;
+  const open = [...ctx.db.order.status.filter('open')].filter(row => row.marketId === marketId && row.remaining > 0);
+  const bids = open.filter(row => row.side === 'buy').map(row => row.price);
+  const asks = open.filter(row => row.side === 'sell').map(row => row.price);
+  const bestBid = bids.length ? Math.max(...bids) : undefined;
+  const bestAsk = asks.length ? Math.min(...asks) : undefined;
+  const midPrice = bestBid !== undefined && bestAsk !== undefined ? Math.round((bestBid + bestAsk) / 2)
+    : lastTradePriceOf(ctx, marketId) ?? 100;
+  const bots: LiveView['bots'] = {};
+  for (const bot of LIVE_BOTS) {
+    const identity = botIdentity(bot);
+    const account = ctx.db.account.identity.find(identity);
+    if (!account) continue;
+    const owner = identity.toHexString();
+    bots[bot] = { owner, cash: Number(account.cash), position: ctx.db.position.id.find(`${owner}:${marketId}`)?.qty ?? 0,
+      openOrderIds: open.filter(row => row.owner.isEqual(identity)).map(row => Number(row.id)) };
+  }
+  const plan = planLiveTick(sim.live, { now, marketId, touch: { bestBid, bestAsk, midPrice }, bots, latestNews: sim.latestNews },
+    () => ctx.random());
+  for (const action of plan.actions) {
+    const identity = botIdentity(action.bot);
+    for (const id of action.cancel) cancelFor(ctx, identity, id, false);
+    for (const order of action.place) submitOrder(ctx, identity, order, false);
+  }
+  let latestNews = sim.latestNews;
+  for (const text of plan.publishNews) {
+    ctx.db.news.insert({ id: 0n, marketId, text, ts: ctx.timestamp });
+    latestNews = { text, postedAt: now };
+  }
+  saveSim(ctx, { live: plan.state, latestNews });
+  copCheck(ctx);
+});
+

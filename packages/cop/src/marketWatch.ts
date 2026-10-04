@@ -93,7 +93,7 @@ export function marketWatch(events: readonly MarketEvent[], now: number, options
       sizeMultiple: Math.round(multiple * 10) / 10, livedMs: Math.round(livedMs), distanceBps: Math.round(distanceBps * 10) / 10,
       deletedAt: del.ts });
   }
-  const lastTrade = trades.at(-1)?.price ?? options.referencePrice ?? null;
+  const lastTrade = trades.length ? trades[trades.length - 1].price : options.referencePrice ?? null;
   return {
     windowMs,
     created: created.size,

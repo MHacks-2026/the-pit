@@ -7,3 +7,4 @@ export * from './spoofer';
 export * from './streamSim';
 export * from './adaptiveTrader';
 export * from './adaptivePriors';
+export * from './liveTick';

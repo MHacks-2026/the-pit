@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@the-pit/bots": "workspace:*",
+    "@the-pit/cop": "workspace:*",
     "@the-pit/engine": "workspace:*",
     "spacetimedb": "2.10.*"
   },

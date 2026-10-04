@@ -71,3 +71,21 @@ downloads depends on recent activity, not on how long the market has run.
 
 Visible change: the Big Screen's High, Low, Volume, Trades and change figures now cover the last 30 minutes (labelled
 "30 min") instead of all history.
+
+## In-database Cop: cost per call (2026-10-04)
+
+The Cop now runs inside `cancel_order` and `cancel_all` (scoped to the canceller) and once per `bot_tick`. A spoof
+completes only when its layers are cancelled after the opposite trade, so `place_order` does no Cop work. It reads the
+last 30 s of `event_log` through a btree index on `ts`. Local SpacetimeDB 2.10.2, sequential calls:
+
+| Condition | place_order p50 / p95 | cancel_all p50 / p95 |
+|---|---|---|
+| Live market (in-database bots trading) | 1.4 / 1.4 ms | 1.8 / 2.4 ms |
+| Flood: 2,000 orders in the last 3 s (~6,000 events in the window) | 1.3 / 1.4 ms | 10.0 / 14.2 ms |
+| Flood: 10,000 orders in the last 13 s (~30,000 events) | 1.4 / 1.4 ms | 48.9 / 52.5 ms |
+
+Live spoofs against the bot market (three layers behind the ask, an opposite IOC buy, cancel all) were alerted 7 to 10 ms
+after the first layer, in the same transaction as the cancel. Limit: cancel cost grows with the last 30 s of market-wide
+activity, because every event in the window is read; the flood rows are about 75x a busy demo. Fix if needed: an
+`(owner, ts)` index on event_log plus maker/taker lookups on trade, so the Cop reads only the canceller's rows.
+
