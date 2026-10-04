@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI terminal polish] 16:13 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Removed decorative subtitle, repeated join guidance, BTC explainer paragraph, footer slogan, and redundant labels. Restored a visible preview QR next to the Join this market link; the QR encodes the current page origin plus `/join`, while production retains its original QR asset. Added direct numeric price/quantity entry, larger phone step buttons, wider spacing and larger touch targets. Kept positive integer/quantity limits before order submission. Local `/screen`, `/trade`, `/join` use the isolated preview database.
+Not done / next: Shafir reviews the local Edge UI. Merge to main only after approval. Vercel branch preview remains blocked until branch-scoped database env is configured.
+Gotchas: Preview QR image comes from api.qrserver.com and contains only the public join URL. A localhost QR cannot be scanned from another phone; deployed preview QR uses its public origin. No dependencies added.
+How to verify: `pnpm test`, `pnpm build`, inspect desktop and phone widths, type values and use step buttons on `/trade`.
+Files touched: apps/web/app/{PageHeader.tsx,JoinBadge.tsx,PreviewQr.tsx,terminal.css,screen,trade,join}, HANDOFF.md.
+
+---
+
 ## [UI terminal preview] 15:25 CEST, Codex -> team
 Branch: ui/terminal-layout-preview (three UI commits, no main merge)
 Done: Added a restrained full-width shell, a divided /screen grid with HACK, Cop and BTC visible together on wide displays, a two-column /trade desk, and an unboxed /join form. Ticker omits the misleading 100/100 wording. Preview join links stay on the preview host. Created isolated Maincloud database `the-pit-ui-terminal-preview`, published the unchanged module, and started its own in-database bots. All 121 active tests and the full build pass after each UI commit.

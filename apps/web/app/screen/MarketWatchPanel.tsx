@@ -21,7 +21,7 @@ export default function MarketWatchPanel() {
   return (
     <div className="board-card" aria-label="Real market watch">
       <div className="board-cardhead">
-        <h3>BTC/USD on Bitstamp, last 60 s</h3>
+        <h3>Bitstamp · last 60 s</h3>
         <span className="board-chip">{status === 'live' ? 'Live' : 'Reconnecting…'}</span>
       </div>
       <dl className="board-mini">
@@ -32,7 +32,7 @@ export default function MarketWatchPanel() {
         <div><dt>Last price</dt><dd>{watch.referencePrice === null ? '–' : `$${usd(watch.referencePrice)}`}</dd></div>
         <div><dt>Flash orders</dt><dd>{watch.flashOrders.length}</dd></div>
       </dl>
-      <h3 style={{ marginTop: 20 }}>Flash orders: big, near the price, gone within 5 s, never filled</h3>
+      <h3 style={{ marginTop: 20 }}>Flash orders</h3>
       {watch.flashOrders.length === 0 ? <p className="board-sub">None in the last minute.</p> : (
         <ul className="trade-orders">
           {watch.flashOrders.map(order => (
@@ -44,11 +44,6 @@ export default function MarketWatchPanel() {
           ))}
         </ul>
       )}
-      <p className="board-sub">
-        Public feeds show order ids, never who placed them, so this cannot accuse anyone. Most flash orders are ordinary
-        market makers updating quotes; a spoofer looks the same from outside. Telling them apart needs the account behind
-        each order, which exchanges have and which is exactly what the Cop&apos;s full rule uses.
-      </p>
     </div>
   );
 }

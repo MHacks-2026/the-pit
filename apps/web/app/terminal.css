@@ -45,12 +45,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .head-right { gap: 0; align-items: flex-end; }
 .qr-badge { gap: 8px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .qr-badge-code { padding: 3px; border-radius: 2px; box-shadow: none; animation: none; }
-.qr-badge-code img { width: 42px; height: 42px; }
+.qr-badge-code img { width: 72px; height: 72px; }
 .qr-badge-copy { gap: 2px; }
 .qr-badge-copy b { font-size: 12px; }
 .qr-badge-copy span, .qr-badge-copy small { font-size: 10px; color: var(--muted); }
 .preview-join-link { color: var(--accent); font-size: 13px; font-weight: 650; text-decoration: none; white-space: nowrap; }
 .preview-join-link:hover { text-decoration: underline; }
+.preview-join { display: flex; align-items: center; gap: 14px; }
+.preview-qr-image, .preview-qr-placeholder { display: block; width: 64px; height: 64px; padding: 3px; background: #fff; border-radius: 3px; image-rendering: pixelated; }
 .mq {
   height: 32px;
   margin: 0;
@@ -216,6 +218,9 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
 .terminal-trade-page .trade-steppers { gap: 20px; }
 .terminal-trade-page .stepper-button { border-color: var(--line); border-radius: 4px; background: var(--card); color: var(--text); }
 .terminal-trade-page .stepper-value { min-width: 36px; }
+.terminal-trade-page input.stepper-value { width: 100%; min-width: 0; height: 52px; padding: 0 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--text); font-size: 24px; font-weight: 700; text-align: center; appearance: textfield; }
+.terminal-trade-page input.stepper-value::-webkit-inner-spin-button,
+.terminal-trade-page input.stepper-value::-webkit-outer-spin-button { appearance: none; margin: 0; }
 .terminal-trade-page .trade-button { border-radius: 4px; box-shadow: none; }
 .terminal-trade-page .trade-buy { background: var(--buy); }
 .terminal-trade-page .trade-sell { background: var(--sell); }
@@ -235,14 +240,31 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
 .terminal-join-page .join-perks { border-top-color: var(--line); color: var(--muted); }
 .terminal-join-page .join-perks li::before { border-radius: 2px; background: var(--accent); }
 @media (max-width: 760px) {
+  .terminal-dashboard .board-card,
+  .terminal-dashboard .terminal-cop,
+  .terminal-dashboard .terminal-btc { padding: 22px 6px; }
+  .terminal-dashboard .board-stats div { padding: 14px 10px; }
+  .terminal-dashboard .board-stats div:last-child { grid-column: 1 / -1; }
   .terminal-trade-page .trade-panel,
   .terminal-trade-page .trade-extras { grid-template-columns: minmax(0, 1fr); }
   .terminal-trade-page .trade-entry,
   .terminal-trade-page .trade-account,
-  .terminal-trade-page .trade-extras > * { border-right: 0; padding: 20px 0; }
+  .terminal-trade-page .trade-extras > * { border-right: 0; padding: 26px 2px; }
   .terminal-trade-page .trade-extras { grid-column: 1; }
+  .terminal-trade-page .trade-entry { gap: 26px; }
+  .terminal-trade-page .stepper-row { gap: 12px; }
+  .terminal-trade-page .stepper-button { width: 58px; height: 58px; flex: none; }
+  .terminal-trade-page input.stepper-value { height: 58px; font-size: 28px; }
+  .terminal-trade-page .trade-actions { gap: 12px; }
+  .terminal-trade-page .trade-button { min-height: 78px; height: auto; }
+  .terminal-trade-page .trade-order { flex-wrap: wrap; gap: 14px; min-height: 62px; }
+  .terminal-join-page .join-form { gap: 20px; padding: 32px 2px; }
+  .terminal-join-page .join-input { min-height: 56px; }
+  .terminal-join-page .join-button { min-height: 52px; }
 }
 @media (max-width: 520px) {
   .terminal-trade-page .trade-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .terminal-trade-page .trade-steppers { grid-template-columns: minmax(0, 1fr); }
+  .preview-qr-image, .preview-qr-placeholder { display: none; }
+  .preview-join-link { font-size: 12px; }
 }

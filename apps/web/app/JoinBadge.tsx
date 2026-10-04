@@ -1,8 +1,8 @@
-// Small "scan to join" badge shown in every page header.
+import PreviewQr from './PreviewQr';
+
 export default function JoinBadge() {
-  // A preview must never send a scanned phone to the production market.
   if (process.env.VERCEL_ENV !== 'production') {
-    return <a className="preview-join-link" href="/join">Join this market ↗</a>;
+    return <div className="preview-join"><PreviewQr /><a className="preview-join-link" href="/join">Join this market ↗</a></div>;
   }
   return (
     <a className="qr-badge" href="/join" aria-label="Scan to trade, join in 15 seconds">
