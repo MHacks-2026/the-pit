@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T31 alt] Adaptive AI trader + real price paths, Claude Code -> next
+Branch: main
+Done: scripts/fetch-price-paths.mjs pulls Coinbase 1-min candles (no key) into 188 rescaled 300-step paths (packages/bots/data/pricePaths.json; raw cache in .tools/). adaptiveTrader.ts: discounted Thompson bandit over make/momentum/revert/flat, public info only, max 1 order per side, position cap 150. runSession adds fundamentalPath, adaptive and per-owner PnL (runStream unchanged, fixture identical). Training (PIT_TRAIN=1) fits priors on 70% of paths + 50 synthetic sessions, tunes on a validation slice, and writes adaptivePriors.ts + docs/ADAPTIVE_EVAL.md. Held out: -56 mean vs -229 untrained, 0 for flat (MM +124, informed -85 in the same sessions); 0 Cop alerts. Runner hook behind PIT_ADAPTIVE_BOT=true (default off).
+Not done / next: Live runner run with the flag (needs the runner PC). Team call on enabling it for judging (past the planned freeze?).
+Gotchas: Training is slow (~40 s), so it is skipped in pnpm test. ADAPTIVE_EVAL.md lists the held-out results of two earlier versions.
+How to verify: pnpm test && pnpm build; PIT_TRAIN=1 pnpm exec vitest run packages/bots/src/adaptiveTraining.test.ts
+Files touched: scripts/fetch-price-paths.mjs, packages/bots/{data/pricePaths.json,src/adaptive*.ts,src/streamSim.ts,src/index.ts}, apps/runner/src/index.ts, .env.example, docs/{ADAPTIVE_EVAL,LIMITATIONS,RUNNER}.md, HANDOFF.md
+
+---
+
 ## [Backend verification] 04:20 CEST, Codex -> next
 Branch: main (acceptance 7f1ae91, audit de35931, load 0c2141f, CI 06cdd9c pushed)
 Done: Added a one-command localhost acceptance run with a temporary SpacetimeDB server and runner. It uses a localhost-issued admin token in an isolated CLI config, tests exchange writes, admin authorization and Cop evidence, audits balances/orders/events, and removes temporary credentials. A read-only audit passed on Maincloud (11 accounts, ~26.8k orders, ~6.7k trades, ~53.6k events, 5 alerts). A 20-client disposable load run with five bots completed 200 IOC orders (p95 28 ms on a fresh database) and passed the post-load audit. Added a Windows GitHub Actions workflow with a pinned, checksum-verified SpacetimeDB binary and no secrets.

@@ -1,4 +1,5 @@
 import { cancelOrder, matchOrder, type Book, type MatchResult, type NewOrder } from '@the-pit/engine';
+import { adaptiveStep, DEFAULT_ADAPTIVE_PARAMS, initialAdaptiveState, type AdaptiveArm, type AdaptiveParams, type AdaptiveStep, type ArmPrior } from './adaptiveTrader';
 import { informedOrder } from './informedTrader';
 import { marketMakerQuotes } from './marketMaker';
 import { noiseOrder } from './noiseTrader';
@@ -59,6 +60,9 @@ export class StreamExchange {
   }
 }
 
+export const ADAPTIVE_OWNER = 'adaptive';
+const STARTING_CASH = 1_000_000;
+
 export interface StreamOptions {
   seed: number;
   seconds?: number;
@@ -70,23 +74,57 @@ export interface StreamOptions {
   mmRequoteMs?: number;
 }
 
+export interface SessionOptions extends StreamOptions {
+  /** Hidden fundamental per simulated second (e.g. a real-data path); replaces the random walk. Last value repeats. */
+  fundamentalPath?: readonly number[];
+  /** Adds the adaptive AI trader (owner ADAPTIVE_OWNER), with its own rng. */
+  adaptive?: boolean;
+  adaptiveParams?: Partial<AdaptiveParams>;
+  adaptivePriors?: Partial<Record<AdaptiveArm, ArmPrior>>;
+}
+
+export interface SessionResult {
+  rows: EventLogRow[];
+  /** Mark-to-market profit per owner at the final mid, in play dollars. */
+  pnl: Record<string, number>;
+  /** Every closed adaptive epoch: the arm that was scored, its reward and the arm chosen next. */
+  adaptiveEpochs: NonNullable<AdaptiveStep['epoch']>[];
+}
+
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
 /** Runs the real bots through matchOrder and returns the event_log rows. Same options give the same rows. */
-export function runStream({ seed, seconds = 60, spoofer = false, spooferParams, mmRequoteMs = 1000 }: StreamOptions): EventLogRow[] {
+export function runStream(options: StreamOptions): EventLogRow[] {
+  return runSession(options).rows;
+}
+
+/** runStream plus optional real-data fundamentals and the adaptive AI trader; also reports profit per owner. */
+export function runSession({ seed, seconds = 60, spoofer = false, spooferParams, mmRequoteMs = 1000,
+  fundamentalPath, adaptive = false, adaptiveParams, adaptivePriors }: SessionOptions): SessionResult {
   if (!Number.isSafeInteger(mmRequoteMs) || mmRequoteMs < 1) throw new Error('mmRequoteMs must be a positive integer');
   if (!Number.isSafeInteger(seconds) || seconds < 0) throw new Error('seconds must be a non-negative integer');
-  const sim = new StreamExchange([...STREAM_OWNERS, SPOOFER_OWNER]);
+  if (fundamentalPath && (!fundamentalPath.length || !fundamentalPath.every(v => Number.isSafeInteger(v) && v >= 1))) {
+    throw new Error('fundamentalPath must be positive integer ticks');
+  }
+  const owners = [...STREAM_OWNERS, SPOOFER_OWNER, ADAPTIVE_OWNER];
+  const sim = new StreamExchange(owners);
   const rng = seeded(seed);
   const spooferRng = seeded(seed + 1000);
+  const adaptiveRng = seeded(seed + 2000);
   const stepMs = gcd(1000, mmRequoteMs);
-  let world = { fundamental: 100, now: 0 };
+  let world = { fundamental: fundamentalPath?.[0] ?? 100, now: 0 };
   const spoofParams = { ...DEFAULT_SPOOFER_PARAMS, ...spooferParams };
   let spoof = initialSpooferState(3000);
+  const aParams = { ...DEFAULT_ADAPTIVE_PARAMS, ...adaptiveParams };
+  let ai = initialAdaptiveState(adaptivePriors, aParams);
+  const mids: number[] = [];
+  const adaptiveEpochs: SessionResult['adaptiveEpochs'] = [];
   for (let now = 0; now <= seconds * 1000; now += stepMs) {
     if (now % mmRequoteMs === 0) sim.requoteMaker(now);
     if (now % 1000 !== 0) continue;
-    world = stepWorld(world, now, rng);
+    world = fundamentalPath
+      ? { fundamental: fundamentalPath[Math.min(now / 1000, fundamentalPath.length - 1)], now }
+      : stepWorld(world, now, rng);
     for (const owner of NOISE_OWNERS) {
       const order = noiseOrder({ marketId: 1, owner, ...sim.touch(), elapsedMs: 1000 }, rng);
       if (order) sim.place(order, now);
@@ -99,6 +137,24 @@ export function runStream({ seed, seconds = 60, spoofer = false, spooferParams, 
       for (const id of step.cancel) sim.cancel(id, SPOOFER_OWNER, now);
       spoof = step.state;
     }
+    if (adaptive) {
+      const touch = sim.touch();
+      const account = sim.book.accounts[ADAPTIVE_OWNER];
+      const step = adaptiveStep(ai, { marketId: 1, owner: ADAPTIVE_OWNER, now, ...touch, recentMids: mids,
+        position: account.positions[1]?.qty ?? 0, cash: account.cash, openOrderIds: sim.open(ADAPTIVE_OWNER).map(o => o.id) },
+      adaptiveRng, aParams);
+      for (const id of step.cancel) sim.cancel(id, ADAPTIVE_OWNER, now);
+      for (const order of step.place) sim.place(order, now);
+      if (step.epoch) adaptiveEpochs.push(step.epoch);
+      ai = step.state;
+      mids.push(touch.midPrice);
+      if (mids.length > 60) mids.shift();
+    }
   }
-  return sim.log;
+  const finalMid = sim.touch().midPrice;
+  const pnl = Object.fromEntries(owners.map(owner => {
+    const account = sim.book.accounts[owner];
+    return [owner, account.cash + (account.positions[1]?.qty ?? 0) * finalMid - STARTING_CASH];
+  }));
+  return { rows: sim.log, pnl, adaptiveEpochs };
 }

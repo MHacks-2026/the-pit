@@ -2,7 +2,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DbConnection } from '@the-pit/bindings';
-import { informedOrder, marketMakerQuotes, noiseOrder, stepWorld, worldNews, type WorldState } from '@the-pit/bots';
+import { ADAPTIVE_PRIORS, ADAPTIVE_TUNED_PARAMS, adaptiveStep, DEFAULT_ADAPTIVE_PARAMS, informedOrder, initialAdaptiveState,
+  marketMakerQuotes, noiseOrder, seeded, stepWorld, worldNews, type WorldState } from '@the-pit/bots';
 import { detectSpoofing, parseEventLog } from '@the-pit/cop';
 
 const host = process.env.NEXT_PUBLIC_SPACETIME_URI || 'ws://127.0.0.1:3000';
@@ -10,6 +11,8 @@ const database = process.env.NEXT_PUBLIC_SPACETIME_DB || 'the-pit-local';
 const adminToken = process.env.ADMIN_TOKEN;
 const botCount = Number(process.env.PIT_BOT_COUNT || 3);
 const seed = Number(process.env.PIT_SEED || 2026);
+// Adaptive AI trader (packages/bots/src/adaptiveTrader.ts). Off unless PIT_ADAPTIVE_BOT=true.
+const adaptiveEnabled = process.env.PIT_ADAPTIVE_BOT === 'true';
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const tokenFile = resolve(repoRoot, process.env.PIT_RUNNER_TOKEN_FILE || '.tools/runner-tokens.json');
 
@@ -57,7 +60,8 @@ async function connect(name: string, token?: string): Promise<DbConnection> {
 }
 
 const admin = await connect('admin', adminToken);
-const names = ['market-maker', ...Array.from({ length: botCount }, (_, index) => `noise-${index + 1}`), 'informed'];
+const names = ['market-maker', ...Array.from({ length: botCount }, (_, index) => `noise-${index + 1}`), 'informed',
+  ...(adaptiveEnabled ? ['adaptive'] : [])];
 const bots = new Map<string, DbConnection>();
 for (const name of names) {
   const connection = await connect(name, tokens[database][name]);
@@ -72,6 +76,34 @@ const pendingAlerts = new Set<string>();
 const lastBotError = new Map<string, string>();
 let lastNews = world.now;
 let busy = false;
+const adaptiveParams = { ...DEFAULT_ADAPTIVE_PARAMS, ...ADAPTIVE_TUNED_PARAMS };
+let adaptiveState = initialAdaptiveState(ADAPTIVE_PRIORS, adaptiveParams);
+const adaptiveRng = seeded(seed + 2000);
+const adaptiveMids: number[] = [];
+
+/** The adaptive AI sees only public data (the same snapshot as the other bots) plus its own position, cash and orders. */
+async function stepAdaptive(now: number, snapshot: ReturnType<typeof marketSnapshot>): Promise<void> {
+  const bot = bots.get('adaptive');
+  if (!bot) return;
+  const owner = bot.identity!.toHexString();
+  const account = [...bot.db.account.iter()].find(row => row.identity.toHexString() === owner);
+  if (!account) return;
+  const position = [...bot.db.position.iter()].find(row => row.owner.toHexString() === owner && row.marketId === 1)?.qty ?? 0;
+  const openOrderIds = [...bot.db.order.iter()]
+    .filter(row => row.owner.toHexString() === owner && row.status === 'open' && row.remaining > 0).map(row => Number(row.id));
+  const step = adaptiveStep(adaptiveState, { marketId: 1, owner, now, ...snapshot, recentMids: adaptiveMids,
+    position, cash: Number(account.cash), openOrderIds }, adaptiveRng, adaptiveParams);
+  adaptiveState = step.state;
+  adaptiveMids.push(snapshot.midPrice);
+  if (adaptiveMids.length > 60) adaptiveMids.shift();
+  if (step.epoch) console.info(`adaptive: ${step.epoch.arm} scored ${step.epoch.reward}, next ${step.epoch.next}`);
+  try {
+    for (const id of step.cancel) await bot.reducers.cancelOrder({ orderId: BigInt(id) });
+  } catch (error) {
+    console.warn('adaptive cancel failed:', error instanceof Error ? error.message : String(error));
+  }
+  for (const order of step.place) await placeBotOrder('adaptive', bot, order);
+}
 
 async function placeBotOrder(name: string, bot: DbConnection, order: NonNullable<ReturnType<typeof noiseOrder>> | null): Promise<void> {
   if (!order) return;
@@ -163,6 +195,7 @@ async function tick(): Promise<void> {
     const informed = bots.get('informed')!;
     const next = informedOrder({ marketId: 1, owner: informed.identity!.toHexString(), fundamental: world.fundamental, ...snapshot });
     await placeBotOrder('informed', informed, next);
+    if (adaptiveEnabled) await stepAdaptive(now, snapshot);
   } catch (error) {
     console.error('Runner tick failed:', error instanceof Error ? error.message : String(error));
   } finally {

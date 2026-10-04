@@ -18,6 +18,8 @@
 - **No false alarms means: none on our bots.** The negative controls are our own market maker (including a 250 ms re-quoting variant) and noise and informed traders. Real market makers and human traders behave differently and were not tested.
 - **The narrator uses a fixed template.** We run without an LLM key, so each alert is narrated by a template filled only from the alert's evidence (e.g. "4 buy orders layered, then a sell trade, then 80 of 80 units cancelled"). The code can call an LLM, with a check that rejects any sentence containing a number not in the evidence, but that path is off in the demo.
 
+- **The adaptive AI trader learned to stop losing, not to win.** It picks among four simple strategies using only public information, with starting estimates trained on real crypto price paths (Coinbase 1-minute candles rescaled to HACK ticks) and synthetic sessions. On held-out paths it averaged -56 play dollars per session, against -229 untrained and 0 for simply not trading. In those sessions only the market maker made money on average (+124); even the informed bot, which sees the hidden value, averaged -85 on the real-data paths. Real data shapes only the hidden price path; every trader is still simulated. Full table and earlier versions: `docs/ADAPTIVE_EVAL.md`.
+
 ## One-line answer for judges
 
 "Our spoofer was tuned to the Cop's rule, so the table shows they agree, not that the Cop generalises. If the spoofer waits 4 seconds before trading, or 6 seconds before cancelling, the Cop misses it every time. It's a transparent rule-based detector on simulated play-money data, not a production surveillance system."

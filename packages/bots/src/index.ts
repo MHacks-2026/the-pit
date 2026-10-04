@@ -5,3 +5,5 @@ export * from './noiseTrader';
 export * from './informedTrader';
 export * from './spoofer';
 export * from './streamSim';
+export * from './adaptiveTrader';
+export * from './adaptivePriors';
