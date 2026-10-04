@@ -2,7 +2,7 @@ import { cancelOrder, matchOrder, type Book, type MatchResult, type NewOrder } f
 import { informedOrder } from './informedTrader';
 import { marketMakerQuotes } from './marketMaker';
 import { noiseOrder } from './noiseTrader';
-import { initialSpooferState, spooferStep } from './spoofer';
+import { DEFAULT_SPOOFER_PARAMS, initialSpooferState, spooferStep, type SpooferParams } from './spoofer';
 import type { Rng } from './types';
 import { stepWorld } from './world';
 
@@ -64,6 +64,8 @@ export interface StreamOptions {
   seconds?: number;
   /** Adds the Spoofer (owner SPOOFER_OWNER). It has its own rng, so the other bots draw the same numbers either way. */
   spoofer?: boolean;
+  /** Overrides for the Spoofer's defaults, e.g. { layerDelayMs: 4000 } for an evasive variant. Ignored without spoofer. */
+  spooferParams?: Partial<SpooferParams>;
   /** How often the MM cancels and requotes. Everything else ticks once per second, like apps/runner. */
   mmRequoteMs?: number;
 }
@@ -71,7 +73,7 @@ export interface StreamOptions {
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
 /** Runs the real bots through matchOrder and returns the event_log rows. Same options give the same rows. */
-export function runStream({ seed, seconds = 60, spoofer = false, mmRequoteMs = 1000 }: StreamOptions): EventLogRow[] {
+export function runStream({ seed, seconds = 60, spoofer = false, spooferParams, mmRequoteMs = 1000 }: StreamOptions): EventLogRow[] {
   if (!Number.isSafeInteger(mmRequoteMs) || mmRequoteMs < 1) throw new Error('mmRequoteMs must be a positive integer');
   if (!Number.isSafeInteger(seconds) || seconds < 0) throw new Error('seconds must be a non-negative integer');
   const sim = new StreamExchange([...STREAM_OWNERS, SPOOFER_OWNER]);
@@ -79,6 +81,7 @@ export function runStream({ seed, seconds = 60, spoofer = false, mmRequoteMs = 1
   const spooferRng = seeded(seed + 1000);
   const stepMs = gcd(1000, mmRequoteMs);
   let world = { fundamental: 100, now: 0 };
+  const spoofParams = { ...DEFAULT_SPOOFER_PARAMS, ...spooferParams };
   let spoof = initialSpooferState(3000);
   for (let now = 0; now <= seconds * 1000; now += stepMs) {
     if (now % mmRequoteMs === 0) sim.requoteMaker(now);
@@ -91,7 +94,7 @@ export function runStream({ seed, seconds = 60, spoofer = false, mmRequoteMs = 1
     const informed = informedOrder({ marketId: 1, owner: 'informed', fundamental: world.fundamental, ...sim.touch() });
     if (informed) sim.place(informed, now);
     if (spoofer) {
-      const step = spooferStep(spoof, { marketId: 1, owner: SPOOFER_OWNER, now, ...sim.touch(), openOrderIds: sim.open(SPOOFER_OWNER).map(o => o.id) }, spooferRng);
+      const step = spooferStep(spoof, { marketId: 1, owner: SPOOFER_OWNER, now, ...sim.touch(), openOrderIds: sim.open(SPOOFER_OWNER).map(o => o.id) }, spooferRng, spoofParams);
       for (const order of step.place) sim.place(order, now);
       for (const id of step.cancel) sim.cancel(id, SPOOFER_OWNER, now);
       spoof = step.state;

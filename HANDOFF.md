@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T22 part, P2] Narrator text + evasive spoofer, Claude Code -> next
+Branch: main
+Done: POST /api/narrate (apps/web/app/api/narrate/route.ts): alert evidence -> facts -> Claude (claude-opus-5-5, effort low, fallbacks "default") -> one sentence of 25 words or fewer. Template fallback when NARRATOR_ENABLED=false, LLM_API_KEY is missing, on error, refusal, timeout (8 s), rate limit (1 call / 6 s), or if the text has a number not in the facts. In-memory cache. /screen AlertFeed fetches it per new alert. runStream takes spooferParams; docs/LIMITATIONS.md has the evasion table (trade 4 s after layering or cancel 6 s after the trade: 0/50 caught) and a one-line judge answer.
+Not done / next: ElevenLabs audio + browser speech (rest of T22), so T22 stays unticked. Set LLM_API_KEY (an Anthropic key) in Vercel; the live LLM call is untested without it. README (T33) should paste docs/LIMITATIONS.md.
+Gotchas: Plain fetch, no SDK (no new dependency). Cache and rate limit are per server instance.
+How to verify: pnpm test && pnpm build; POST /api/narrate with an alert body.
+Files touched: apps/web/lib/narrator{,.test}.ts, apps/web/app/api/narrate/route.ts, apps/web/app/screen/AlertFeed.tsx, packages/bots/src/{streamSim,copStreams.test}.ts, docs/LIMITATIONS.md, HANDOFF.md
+
+---
+
 ## [T35] 20:00 EDT, Claude chat -> next
 Branch: fe/t35-beat-cop
 Done: Beat the Cop. /trade has a 60 s challenge panel (app/trade/BeatTheCop.tsx): Start, countdown, live profit/caught/score, final result. Score = profit (cash + position at mid) minus 500 per Cop alert raised against you during the 60 s (alert count read from the alert table). /screen has a "Beat the Cop" card (humans only): profit vs 10,000 minus 500 per alert (all time), top 5, "caught N x". Penalty lives in apps/web/lib/copScore.ts. No backend changes.

@@ -78,3 +78,23 @@ describe('Cop fixture streams (packages/cop/fixtures/streams.ts)', () => {
     await expect(file).toMatchFileSnapshot('../../cop/fixtures/streams.ts');
   });
 });
+
+describe('evasive spoofer: where the Cop stops detecting (P2)', () => {
+  // The Cop needs the opposite trade within 3 s of layering and the cancels within 5 s of that trade.
+  // The default Spoofer (1 s / 1 s) sits inside both windows by design; these variants step outside one each.
+  const spooferTrades = (events: CopEvent[]) => events.filter(e => e.kind === 'trade' && e.taker === SPOOFER).length;
+  const cases = [
+    { name: 'default (trade 1 s after layering, cancel 1 s after trade)', params: {}, caught: true },
+    { name: 'trades 4 s after layering', params: { layerDelayMs: 4_000 }, caught: false },
+    { name: 'cancels 6 s after trading', params: { cancelDelayMs: 6_000 }, caught: false },
+  ];
+  for (const { name, params, caught } of cases) {
+    it(`${name}: ${caught ? 'caught' : 'missed'}`, () => {
+      const { events, owners } = copAlerts(runStream({ seed: SEED, seconds: SECONDS, spoofer: true, spooferParams: params }));
+      expect(spooferTrades(events)).toBeGreaterThanOrEqual(2); // the manipulation really happened
+      expect(owners.every(owner => owner === SPOOFER)).toBe(true);
+      if (caught) expect(owners.length).toBeGreaterThanOrEqual(2);
+      else expect(owners).toEqual([]);
+    });
+  }
+});
