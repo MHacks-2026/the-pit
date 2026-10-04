@@ -16,7 +16,7 @@
 
   The evasive spoofers still trade every cycle (more than 180 trades in each 50-seed run); the Cop simply does not see them. Reproduce with `runStream({ seed, spoofer: true, spooferParams: { layerDelayMs: 4000 } })` from `@the-pit/bots`; `packages/bots/src/copStreams.test.ts` checks both evasive cases.
 - **No false alarms means: none on our bots.** The negative controls are our own market maker (including a 250 ms re-quoting variant) and noise and informed traders. Real market makers and human traders behave differently and were not tested.
-- **The narrator is grounded but not verified by a person.** The LLM gets only facts derived from the alert's evidence, and any sentence containing a number that is not in those facts is replaced by a fixed template. It can still phrase a true fact misleadingly.
+- **The narrator uses a fixed template.** We run without an LLM key, so each alert is narrated by a template filled only from the alert's evidence (e.g. "4 buy orders layered, then a sell trade, then 80 of 80 units cancelled"). The code can call an LLM, with a check that rejects any sentence containing a number not in the evidence, but that path is off in the demo.
 
 ## One-line answer for judges
 
