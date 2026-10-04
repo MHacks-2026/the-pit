@@ -99,3 +99,97 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
   .brand h1 { font-size: 22px; }
   .feed-heading > p { display: none; }
 }
+
+/* Live room: one contiguous grid, divided by rules rather than cards. */
+.terminal-dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0;
+  align-items: stretch;
+}
+.terminal-dashboard .board-grid { display: contents; }
+.terminal-dashboard > .feed-state { grid-column: 1 / -1; min-height: 240px; }
+.terminal-dashboard .news-strip { grid-column: 1 / -1; grid-row: 1; margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--line); border-radius: 0; background: #132431; color: var(--text); font-size: 12px; }
+.terminal-dashboard .board-stats { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 0; border-bottom: 1px solid var(--line); }
+.terminal-dashboard .board-stats div { padding: 10px 14px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: none; }
+.terminal-dashboard .board-stats div:last-child { border-right: 0; }
+.terminal-dashboard .board-stats dt { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.terminal-dashboard .board-stats dd { margin-top: 3px; font-size: 19px; font-weight: 650; }
+.terminal-dashboard .board-card,
+.terminal-dashboard .terminal-cop,
+.terminal-dashboard .terminal-btc {
+  min-width: 0;
+  margin: 0;
+  padding: 16px 18px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.terminal-dashboard .board-card[aria-label="Price"] { background: none; }
+.terminal-dashboard .terminal-price { grid-column: 1 / 6; grid-row: 3; min-height: 450px; }
+.terminal-dashboard .terminal-cop { grid-column: 6 / 10; grid-row: 3; min-height: 450px; }
+.terminal-dashboard .terminal-btc { grid-column: 10 / -1; grid-row: 3; min-height: 450px; border-right: 0; }
+.terminal-dashboard .terminal-book { grid-column: 1 / 5; grid-row: 4; }
+.terminal-dashboard .terminal-tape { grid-column: 5 / 9; grid-row: 4; }
+.terminal-dashboard .terminal-depth { grid-column: 9 / -1; grid-row: 4; border-right: 0; }
+.terminal-dashboard .terminal-leaders { grid-column: 1 / 7; grid-row: 5; }
+.terminal-dashboard .terminal-beat { grid-column: 7 / -1; grid-row: 5; border-right: 0; }
+.terminal-dashboard .board-cardhead { align-items: center; margin-bottom: 12px; }
+.terminal-dashboard .board-cardhead h3,
+.terminal-pane-title { margin: 0; color: var(--text); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.terminal-pane-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+.terminal-pane-title span { color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.terminal-dashboard .board-chip { border: 0; border-radius: 0; background: none; color: var(--muted); font-size: 10px; }
+.terminal-dashboard .board-price { font-size: clamp(48px, 5vw, 82px); }
+.terminal-dashboard .board-mini { gap: 0; border-top: 1px solid var(--line); }
+.terminal-dashboard .board-mini div { padding: 10px; }
+.terminal-dashboard .book-row { padding: 7px 8px; border-radius: 0; font-size: 13px; }
+.terminal-dashboard .tape-row, .terminal-dashboard .rank-row { padding: 8px 0; font-size: 13px; }
+.terminal-dashboard .cop-dashboard { display: block; }
+.terminal-dashboard .cop-focus, .terminal-dashboard .cop-recent { min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; }
+.terminal-dashboard .cop-focus { border: 0; }
+.terminal-dashboard .cop-focus h3 { margin: 12px 0 8px; font-size: 26px; }
+.terminal-dashboard .cop-sequence { font-size: 17px; }
+.terminal-dashboard .cop-recent { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.terminal-dashboard .cop-recent li button { padding: 8px 4px; }
+.terminal-dashboard .cop-recent li button[aria-pressed="true"] { background: #183038; }
+.terminal-dashboard .cop-seal { margin-top: 12px; }
+.terminal-dashboard .terminal-btc .board-card { padding: 0; border: 0; }
+.terminal-dashboard .terminal-btc .board-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.terminal-dashboard .terminal-btc .board-mini div { border-bottom: 1px solid var(--line); }
+.terminal-dashboard .terminal-btc .board-sub { font-size: 11px; line-height: 1.4; }
+@media (max-width: 1300px) {
+  .terminal-dashboard .terminal-price { grid-column: 1 / 8; grid-row: 3; }
+  .terminal-dashboard .terminal-cop { grid-column: 8 / -1; grid-row: 3; border-right: 0; }
+  .terminal-dashboard .terminal-btc { grid-column: 1 / -1; grid-row: 4; min-height: 0; }
+  .terminal-dashboard .terminal-btc .board-mini { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .terminal-dashboard .terminal-book { grid-column: 1 / 7; grid-row: 5; }
+  .terminal-dashboard .terminal-tape { grid-column: 7 / -1; grid-row: 5; border-right: 0; }
+  .terminal-dashboard .terminal-depth { grid-column: 1 / -1; grid-row: 6; }
+  .terminal-dashboard .terminal-leaders { grid-row: 7; }
+  .terminal-dashboard .terminal-beat { grid-row: 7; }
+}
+@media (max-width: 760px) {
+  .terminal-dashboard .board-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .terminal-dashboard .board-stats div { border-bottom: 1px solid var(--line); }
+  .terminal-dashboard .terminal-price,
+  .terminal-dashboard .terminal-cop,
+  .terminal-dashboard .terminal-btc,
+  .terminal-dashboard .terminal-book,
+  .terminal-dashboard .terminal-tape,
+  .terminal-dashboard .terminal-depth,
+  .terminal-dashboard .terminal-leaders,
+  .terminal-dashboard .terminal-beat { grid-column: 1 / -1; min-height: 0; border-right: 0; }
+  .terminal-dashboard .terminal-price { grid-row: 3; }
+  .terminal-dashboard .terminal-cop { grid-row: 4; }
+  .terminal-dashboard .terminal-btc { grid-row: 5; }
+  .terminal-dashboard .terminal-book { grid-row: 6; }
+  .terminal-dashboard .terminal-tape { grid-row: 7; }
+  .terminal-dashboard .terminal-depth { grid-row: 8; }
+  .terminal-dashboard .terminal-leaders { grid-row: 9; }
+  .terminal-dashboard .terminal-beat { grid-row: 10; }
+}
