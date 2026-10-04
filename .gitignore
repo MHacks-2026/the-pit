@@ -6,3 +6,10 @@ coverage/
 *.tsbuildinfo
 spacetime.local.json
 spacetimedb/spacetime.local.json
+
+# Local secrets (API keys). Only .env.example is committed.
+.env
+.env.*
+!.env.example
+# Local browser-tool output
+.playwright-mcp/

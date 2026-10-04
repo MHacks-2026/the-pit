@@ -1,12 +1,5 @@
-import { createNarrator, parseNarrateAlert } from '../../../lib/narrator';
-
-// One narrator per server instance: the cache and rate limit live as long as the instance does.
-const narrate = createNarrator({
-  apiKey: process.env.LLM_API_KEY,
-  enabled: process.env.NARRATOR_ENABLED !== 'false', // kill switch: set NARRATOR_ENABLED=false
-  fetch: (...args) => fetch(...args),
-  now: () => Date.now(),
-});
+import { parseNarrateAlert } from '../../../lib/narrator';
+import { narrate } from '../../../lib/serverVoice';
 
 /** POST { alert: { kind, score, trader, evidence } } -> { text, source: 'llm' | 'template' | 'cache' } */
 export async function POST(request: Request) {

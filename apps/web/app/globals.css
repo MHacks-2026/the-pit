@@ -295,3 +295,8 @@ code { font: 600 .95em/1 var(--text); letter-spacing: .02em; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .mq-track, .wash { animation: none; }
 }
+
+/* Cop voice toggle on the Big Screen */
+.voice { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+.voice-toggle { min-height: 40px; padding: 0 18px; border: 2px solid var(--tape); border-radius: 999px; background: transparent; color: var(--tape); font: 700 .9375rem/1 var(--text); cursor: pointer; }
+.voice-toggle[aria-pressed="true"] { background: var(--tape); color: #1d1600; }

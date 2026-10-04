@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T22 voice] ElevenLabs Cop voice, Claude Code -> next
+Branch: FrontEndChanges
+Done: /api/speak takes an alert (never free text), writes the narrator's sentence, and returns ElevenLabs audio (lib/speech.ts: cache, 1 call / 3 s, 8 s timeout, NARRATOR_ENABLED kill switch, tested) or JSON text. /screen Cop desk has "Turn on Cop voice" (the click browsers require); new alerts are read out with ElevenLabs, else the browser voice. Default voice: ElevenLabs premade "Daniel" (onwK4e9ZLuTAKqWW03F9), model eleven_flash_v2_5; override with ELEVENLABS_VOICE_ID / ELEVENLABS_MODEL_ID. .gitignore now ignores .env files.
+Not done / next: The key we have lacks the Text to Speech permission (ElevenLabs answered 401), so only the browser-voice fallback is verified end to end. Create a key with Text to Speech access, put it in Vercel as ELEVENLABS_API_KEY (server-only, no NEXT_PUBLIC_) and in apps/web/.env.local, then confirm the label says "ElevenLabs". The earlier key was pasted in chat: regenerate it.
+Gotchas: Voice is off on every page load on purpose (browser autoplay rules). The default voice id is a premade voice that could not be checked with the restricted key.
+How to verify: pnpm test; POST /api/speak with an alert body; on /screen turn the voice on and trigger Try to cheat.
+Files touched: apps/web/lib/{speech,speech.test,serverVoice}.ts, apps/web/app/api/{speak,narrate}/route.ts, apps/web/app/screen/AlertFeed.tsx, apps/web/app/globals.css, .env.example, .gitignore, HANDOFF.md
+
+---
+
 ## [UI] Trading-pit redesign + /trade join fix, Claude Code -> next
 Branch: main
 Done: Same features and data, new look. Big Shoulders (Chicago) for wordmark/prices/numbers, Atkinson Hyperlegible Next for text, via next/font (no new dependency). Palette: floor #14171c, chalk #ecede8, up #4ade80, down #ff6b5e, Cop tape #ffd23f (Cop only). Removed the starfield backdrop, eyebrow labels, middle-dot strings and the robot emoji; traders now wear jacket badges (apps/web/lib/badges.ts, tested; bots outlined). Motion: price ticks on change; police tape sweeps the top of /screen when a NEW Cop alert lands; alerts render as citation tickets. Also fixed a real bug: the Ticker's anonymous connection was reused for the whole page (SpacetimeDB shares one connection per database), so /trade never recognised the player who joined; every provider now uses liveConnectionBuilder with the saved token.

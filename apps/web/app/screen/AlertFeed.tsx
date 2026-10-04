@@ -45,6 +45,63 @@ function RecordSeal() {
   </p>;
 }
 
+// An empty WAV, played inside the click that turns the voice on, so the browser lets later alerts play sound.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+
+function browserSay(text: string) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+/**
+ * The Cop's voice on the Big Screen: ElevenLabs audio from /api/speak, else the browser's built-in voice, else text.
+ * Off on every page load because browsers block sound until someone clicks; the toggle is that click.
+ */
+function useCopVoice() {
+  const [on, setOn] = useState(false);
+  const [engine, setEngine] = useState<string | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const onRef = useRef(false);
+  onRef.current = on;
+
+  function toggle() {
+    if (on) {
+      setOn(false);
+      audio.current?.pause();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      return;
+    }
+    audio.current ??= new Audio();
+    audio.current.src = SILENT_WAV;
+    void audio.current.play().catch(() => {});
+    setOn(true);
+    setEngine(null);
+    browserSay('Cop voice on.');
+  }
+
+  async function say(alert: { kind: string; score: number; trader: string; evidence: unknown }) {
+    if (!onRef.current) return;
+    try {
+      const response = await fetch('/api/speak', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ alert }),
+      });
+      if ((response.headers.get('content-type') ?? '').startsWith('audio/') && audio.current) {
+        const text = decodeURIComponent(response.headers.get('x-narration') ?? '');
+        const url = URL.createObjectURL(await response.blob());
+        audio.current.src = url;
+        audio.current.onended = () => URL.revokeObjectURL(url);
+        await audio.current.play().then(() => setEngine('ElevenLabs'), () => { browserSay(text); setEngine('Browser voice'); });
+        return;
+      }
+      const result = await response.json() as { text?: string };
+      if (result.text) { browserSay(result.text); setEngine('Browser voice'); }
+    } catch { /* the citation on screen still says it */ }
+  }
+
+  return { on, engine, toggle, say };
+}
+
 function FeedContent() {
   const { connectionError } = useSpacetimeDB();
   const [alerts, alertsReady] = useTable(tables.alert);
@@ -53,6 +110,7 @@ function FeedContent() {
   const bots = new Map(accounts.map(account => [account.identity.toHexString(), account.isBot]));
   const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 12);
   const narrations = useNarrations(latest, names);
+  const voice = useCopVoice();
 
   // The one orchestrated moment: when a new alert lands, police tape sweeps across the top of the screen.
   // Alerts that were already there when the page loaded are treated as seen, so reloading never replays it.
@@ -68,11 +126,26 @@ function FeedContent() {
     for (const id of arrived) seen.current.add(id);
     setFresh(previous => new Set([...previous, ...arrived]));
     setSweep(n => n + 1);
+    // Speak only the newest arrival, so a burst of alerts does not queue up a monologue.
+    const newest = alerts.filter(alert => arrived.includes(alert.id.toString()))
+      .sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch))[0];
+    let evidence: unknown = null;
+    try { evidence = JSON.parse(newest.evidence); } catch { /* narrator handles missing evidence */ }
+    void voice.say({ kind: newest.kind, score: newest.score, trader: names.get(newest.owner.toHexString()) ?? '', evidence });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alerts, alertsReady]);
 
   if (connectionError) return <p className="state" role="alert">The live alert feed is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
   if (!alertsReady) return <p className="state" role="status">Connecting to the live alert feed…</p>;
-  const tape = sweep ? <div key={sweep} className="cop-sweep" aria-hidden="true" /> : null;
+  const tape = <>
+    {sweep ? <div key={sweep} className="cop-sweep" aria-hidden="true" /> : null}
+    <p className="voice">
+      <button type="button" className="voice-toggle" aria-pressed={voice.on} onClick={voice.toggle}>
+        {voice.on ? 'Mute Cop voice' : 'Turn on Cop voice'}
+      </button>
+      <span className="quiet">{voice.on ? (voice.engine ? `Speaking new alerts with: ${voice.engine}` : 'New alerts will be read out.') : 'Reads each new alert aloud.'}</span>
+    </p>
+  </>;
   if (!latest.length) return <>
     {tape}
     <p className="state" role="status">No alerts yet. The Cop is watching every order.</p>
