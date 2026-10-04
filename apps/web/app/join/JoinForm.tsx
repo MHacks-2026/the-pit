@@ -68,7 +68,12 @@ function JoinInner() {
       />
       <p className="join-hint">Starting cash is 10,000 play dollars.</p>
       {error ? <p className="join-error" role="alert">{error}</p> : null}
-      <button className="join-button" type="submit" disabled={busy}>Join</button>
+      <button className="join-button" type="submit" disabled={busy}>Join the pit</button>
+      <ul className="join-perks">
+        <li>10,000 play dollars to start</li>
+        <li>Trade live against AI bots</li>
+        <li>A Market Cop watches every order</li>
+      </ul>
     </form>
   );
 }
