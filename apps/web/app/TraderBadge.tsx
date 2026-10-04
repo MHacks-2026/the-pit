@@ -6,7 +6,7 @@ export default function TraderBadge({ name, isBot }: { name: string; isBot: bool
   const badge = badgeFor(name, isBot);
   return (
     <span className={isBot ? 'badge badge-bot' : 'badge'} title={isBot ? `${name} (bot)` : name}
-      style={{ '--jacket': badge.jacket, '--ink': badge.ink } as CSSProperties}>
+      style={{ '--jacket': badge.jacket, '--badge-ink': badge.ink } as CSSProperties}>
       {badge.code}
       {isBot ? <span className="visually-hidden"> bot</span> : null}
     </span>

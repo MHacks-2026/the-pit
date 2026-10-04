@@ -5,6 +5,8 @@ import Ticker from '../Ticker';
 export default function Join() {
   return (
     <main className="page page-phone">
+      <p className="tab">Case file: new trader</p>
+      <div className="sheet">
       <PageHeader subtitle="Pick a name to start trading." />
       <Ticker />
       <section className="desk" aria-labelledby="join-heading">
@@ -15,6 +17,7 @@ export default function Join() {
         <JoinForm />
       </section>
       <footer className="colophon">Markets are only fair if someone is watching.</footer>
+      </div>
     </main>
   );
 }

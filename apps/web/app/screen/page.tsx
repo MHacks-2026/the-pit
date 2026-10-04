@@ -7,6 +7,8 @@ import Ticker from '../Ticker';
 export default function Screen() {
   return (
     <main className="page page-screen">
+      <p className="tab">Case file: the live floor</p>
+      <div className="sheet">
       <PageHeader subtitle="A live exchange with a Market Cop watching every order." />
       <Ticker />
       <section className="floor" aria-labelledby="market-heading">
@@ -28,6 +30,7 @@ export default function Screen() {
         <MarketWatchPanel />
       </section>
       <footer className="colophon">Markets are only fair if someone is watching.</footer>
+      </div>
     </main>
   );
 }

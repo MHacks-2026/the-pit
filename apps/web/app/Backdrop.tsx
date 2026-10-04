@@ -1,7 +1,7 @@
 'use client';
 
-// Background: a few soft washes of pit green and chalk white that drift very slowly, plus the halftone dot
-// spotlight that follows the pointer. CSS only (no images, no libraries); the pointer only updates two CSS values,
+// Background: a few soft washes that drift very slowly behind the page, plus the halftone dot spotlight that follows
+// the pointer. CSS only (no images, no libraries); the pointer only updates two CSS values,
 // so React never re-renders. Reduced motion stops the drift and the spotlight.
 
 import { useEffect, useRef } from 'react';
@@ -27,11 +27,14 @@ export default function Backdrop() {
     };
   }, []);
 
+  // The washes sit behind the page; the halftone sits above it (like newsprint dots on paper) and never takes clicks.
   return (
-    <div className="backdrop" ref={ref} aria-hidden="true">
-      <i className="wash wash-green" />
-      <i className="wash wash-chalk" />
-      <i className="wash wash-green-2" />
+    <div ref={ref} aria-hidden="true" className="backdrop-root">
+      <div className="backdrop">
+        <i className="wash wash-green" />
+        <i className="wash wash-chalk" />
+        <i className="wash wash-green-2" />
+      </div>
       <i className="halftone" />
     </div>
   );

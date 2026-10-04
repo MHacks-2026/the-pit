@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI] Case-file restyle + merge of main into FrontEndChanges, Claude Code -> next
+Branch: FrontEndChanges
+Done: Merged origin/main (Shafir's focused Cop incident + recent cases) into this branch; AlertFeed keeps Shafir's layout and adds badges, the shared token connection (join fix), the police-tape sweep, the ElevenLabs voice and a "Cited" stamp on newly arrived cases. Restyled every page in the case-file format: tan paper, cream sheet with a folder tab, 2px ink rules, square corners, Special Elite (typewriter) titles and Cop text, Barlow Semi Condensed for everything else, hazard stripes on Cop panels, red stamp; dark palette follows the device setting (text on Cop yellow stays dark). Teal chart line kept (darker on paper); cursor halftone kept as ink dots printed over the page. Checked at 390 px and 1440 px, light and dark, with a live spoof.
+Not done / next: Push FrontEndChanges and merge to main via PR (it is now up to date with main). Local main has a stray copy of the redesign commit (92b5099); after the PR merges, `git checkout main && git pull` fast-forwards it.
+Gotchas: TraderBadge now uses --badge-ink (the palette owns --ink).
+How to verify: pnpm test && pnpm build; open /screen, /join, /trade
+Files touched: apps/web/app/{globals.css,layout.tsx,Backdrop.tsx,PageHeader.tsx,TraderBadge.tsx,screen/page.tsx,join/page.tsx,trade/page.tsx}, HANDOFF.md
+
+---
+
 ## [T22 voice] ElevenLabs Cop voice, Claude Code -> next
 Branch: FrontEndChanges
 Done: /api/speak takes an alert (never free text), writes the narrator's sentence, and returns ElevenLabs audio (lib/speech.ts: cache, 1 call / 3 s, 8 s timeout, NARRATOR_ENABLED kill switch, tested) or JSON text. /screen Cop desk has "Turn on Cop voice" (the click browsers require); new alerts are read out with ElevenLabs, else the browser voice. Default voice: ElevenLabs premade "Daniel" (onwK4e9ZLuTAKqWW03F9), model eleven_flash_v2_5; override with ELEVENLABS_VOICE_ID / ELEVENLABS_MODEL_ID. .gitignore now ignores .env files.
