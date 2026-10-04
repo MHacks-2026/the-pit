@@ -38,3 +38,12 @@ Switching the shared database over (needs the database owner's CLI login):
 Rollback: `spacetime call the-pit-mhacks-2026 admin_bots_stop --server maincloud`, then start the runner task again.
 Never run both: the in-database bots and the runner's bots would double the market.
 
+## Reset the market before judging
+
+`spacetime call the-pit-mhacks-2026 admin_reset_market 1 --server maincloud` (database owner's CLI login only).
+In one transaction it deletes HACK's orders (open ones included), trades, positions, event log and news, every alert,
+and every human account; bot accounts stay with cash back at 10,000, and in-database bots continue from a fresh state
+(hidden value 100). Players still on `/trade` see "You haven't joined yet" and rejoin from `/join`. Measured locally:
+a market with 30,002 orders, 15,001 trades and 45,003 events reset in 114 ms. There is no browser button on purpose:
+admin calls need the owner's token, which must never be shipped to the web app.
+

@@ -318,9 +318,28 @@ export const adminSettle = spacetimedb.reducer({ marketId: t.u32(), outcome: t.b
   requireAdmin(ctx);
   throw new SenderError('settlement not implemented');
 });
-export const adminResetMarket = spacetimedb.reducer({ marketId: t.u32() }, ctx => {
+/**
+ * Fresh market for a demo: deletes the market's orders (open ones included), trades, positions, event log and news,
+ * all alerts, and every human account (players rejoin from /join); bots stay with cash back at 10,000. Cash is not
+ * per market, but HACK is the only market. In-database bots keep running from a fresh state (hidden value 100).
+ */
+export const adminResetMarket = spacetimedb.reducer({ marketId: t.u32() }, (ctx, { marketId }) => {
   requireAdmin(ctx);
-  throw new SenderError('market reset not implemented');
+  if (!ctx.db.market.id.find(marketId)) throw new SenderError('market not found');
+  for (const row of [...ctx.db.order.iter()]) if (row.marketId === marketId) ctx.db.order.id.delete(row.id);
+  for (const row of [...ctx.db.trade.iter()]) if (row.marketId === marketId) ctx.db.trade.id.delete(row.id);
+  for (const row of [...ctx.db.position.iter()]) if (row.marketId === marketId) ctx.db.position.id.delete(row.id);
+  for (const row of [...ctx.db.eventLog.iter()]) if (row.marketId === marketId) ctx.db.eventLog.id.delete(row.id);
+  for (const row of [...ctx.db.news.iter()]) if (row.marketId === marketId) ctx.db.news.id.delete(row.id);
+  for (const row of [...ctx.db.alert.iter()]) ctx.db.alert.id.delete(row.id);
+  for (const row of [...ctx.db.alertIncident.iter()]) ctx.db.alertIncident.incidentKey.delete(row.incidentKey);
+  ctx.db.marketState.marketId.delete(marketId);
+  for (const row of [...ctx.db.account.iter()]) {
+    if (!row.isBot) ctx.db.account.identity.delete(row.identity);
+    else if (row.cash !== 10_000n) ctx.db.account.identity.update({ ...row, cash: 10_000n });
+  }
+  const sim = loadSim(ctx);
+  if (sim) saveSim(ctx, { live: initialLiveState(nowMs(ctx), sim.live.adaptiveEnabled) });
 });
 export const adminRegisterBot = spacetimedb.reducer(
   { identity: t.identity(), name: t.string() },

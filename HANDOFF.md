@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T24] admin_reset_market, Claude Code -> next
+Branch: main (module change NOT yet published to Maincloud)
+Done: admin_reset_market(marketId) deletes the market's orders, trades, positions, event log, news, all alerts and every human account; bots stay at 10,000 cash; in-database bots restart from a fresh state. spacetimedb/test/reset.test.ts (live, needs PIT_TEST_DATABASE + ADMIN_TOKEN) passes, including "admin only" for players. Locally: reset of a live bot market took 16 ms and bots resumed trading within seconds (audit passed); 30k orders + 15k trades + 45k events reset in 114 ms. T24 ticked (QR and starting cash were already done).
+Not done / next: Publish to Maincloud, then run `spacetime call the-pit-mhacks-2026 admin_reset_market 1 --server maincloud` right before judging. No web button: admin token must not reach the browser.
+Gotchas: Reset is irreversible and deletes players; tell anyone mid-test first.
+How to verify: pnpm test && pnpm build; live: run spacetimedb/test/reset.test.ts against a local database
+Files touched: spacetimedb/spacetimedb/src/index.ts, spacetimedb/test/reset.test.ts, docs/RUNNER.md, TODO.md, HANDOFF.md
+
+---
+
 ## [D9] Bots and Cop inside SpacetimeDB, Claude Code -> next
 Branch: main (module change NOT yet published to Maincloud; in-database bots are off until admin_bots_start)
 Done: packages/bots/src/liveTick.ts (pure, tested) plans each tick like the runner. Module: scheduled bot_tick (1 s), admin_bots_start(adaptive)/admin_bots_stop, sim_state, alert_incident, event_log.ts index; Cop runs in cancel_order/cancel_all (scoped to the canceller) and per tick; bots' rejected orders are skipped, not fatal. Local verification: market ran 15+ min with no runner (590 trades, 47 news, open orders bounded), audit passed, live spoofs caught 8/8 in 7-10 ms with 0 alerts on bots, cop-path test passes in 31 ms on a quiet DB, in-place upgrade over a running bot DB worked. Latency in docs/LOAD_TEST.md.
