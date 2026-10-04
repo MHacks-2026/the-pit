@@ -434,3 +434,65 @@ h1 { letter-spacing: -.04em; }
 
 /* cheat now lives inside Beat the Cop */
 .cop-box .cheat-box { margin-top: 4px; padding-top: 14px; border-top: 0; width: 100%; }
+
+/* modern buttons */
+.join-button, .cheat-button, .cop-button { border-radius: 999px; font-size: 17px; font-weight: 600; letter-spacing: -.01em; transition: transform .15s ease, background .2s ease, box-shadow .2s ease, opacity .2s ease; cursor: pointer; }
+.join-button:not(:disabled):active, .cheat-button:not(:disabled):active, .cop-button:not(:disabled):active { transform: scale(.97); }
+.cop-button { border: 0; padding: 15px 30px; background: linear-gradient(180deg, #ffb340, #ff9f0a); color: #2b1700; box-shadow: 0 10px 26px -12px rgba(255, 159, 10, .8); }
+.cop-button:not(:disabled):hover { background: linear-gradient(180deg, #ffbf5c, #ffa826); transform: translateY(-1px); }
+.cop-button:disabled { opacity: .55; box-shadow: none; }
+.cheat-button { border: 1px solid rgba(255, 69, 58, .4); padding: 14px 28px; background: rgba(255, 69, 58, .14); color: #ff7a72; }
+.cheat-button:not(:disabled):hover { background: rgba(255, 69, 58, .24); transform: translateY(-1px); }
+.cheat-button:disabled { opacity: .4; }
+.cite-box .join-button { border: 0; padding: 14px 28px; background: #f5f5f7; color: #000; box-shadow: none; }
+.cite-box .join-button:hover { background: #fff; }
+.cite-canvas { box-shadow: 0 24px 50px -28px rgba(0, 0, 0, .9); border-radius: 14px; max-width: 460px; }
+
+/* bolder buttons */
+.cop-button, .cheat-button, .cite-box .join-button { font-size: 18px; font-weight: 800; letter-spacing: -.015em; padding: 18px 36px; }
+.cop-button { background: linear-gradient(180deg, #ffc15e, #ff9500); color: #1f1100; box-shadow: 0 14px 34px -12px rgba(255, 149, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .45); }
+.cheat-button { border: 0; background: linear-gradient(180deg, #ff6a61, #ff3b30); color: #fff; box-shadow: 0 14px 34px -12px rgba(255, 59, 48, .85), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.cheat-button:not(:disabled):hover { background: linear-gradient(180deg, #ff7a72, #ff4a40); }
+.cheat-button:disabled { opacity: .35; box-shadow: none; }
+.cite-box .join-button { background: #fff; color: #000; box-shadow: 0 14px 34px -14px rgba(255, 255, 255, .5); }
+.join-button { font-weight: 800; }
+
+/* buy / sell buttons */
+.trade-actions { gap: 12px; }
+.trade-button { position: relative; overflow: hidden; height: 84px; border-radius: 999px; font-size: 26px; font-weight: 800; letter-spacing: -.02em; gap: 3px; transition: transform .15s ease, filter .2s ease, box-shadow .2s ease; -webkit-tap-highlight-color: transparent; }
+.trade-button::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, .28), rgba(255, 255, 255, 0) 52%); pointer-events: none; }
+.trade-buy { background: linear-gradient(180deg, #34d058, #1fae48); color: #03200d; box-shadow: 0 16px 36px -14px rgba(48, 209, 88, .85), inset 0 1px 0 rgba(255, 255, 255, .4); }
+.trade-sell { background: linear-gradient(180deg, #ff5a4f, #e5352b); color: #fff; box-shadow: 0 16px 36px -14px rgba(255, 69, 58, .85), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.trade-button:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
+.trade-button:not(:disabled):active { transform: scale(.97); filter: brightness(.95); }
+.trade-button:disabled { opacity: .5; box-shadow: none; }
+.trade-button > span:first-child { position: relative; z-index: 1; }
+.tb-sub { position: relative; z-index: 1; font-size: 15px; font-weight: 700; opacity: .8; }
+
+/* backdrop: dark blurred meadow, glints and a halftone spotlight */
+:root, body { background: #040806; }
+.bg-motion { background: radial-gradient(120% 90% at 8% 100%, #0d1d12 0%, transparent 60%), radial-gradient(100% 80% at 92% 0%, #0b1030 0%, transparent 62%), #050907; --mx: 72vw; --my: 34vh; }
+.bokeh { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); will-change: transform; animation: bokeh-drift 48s ease-in-out infinite alternate; }
+@keyframes bokeh-drift { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.08); } }
+.spark { position: absolute; background: #eaf2ff; clip-path: polygon(50% 0, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0 50%, 41% 41%); opacity: .15; animation: twinkle 5s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .08; transform: scale(.7); } 50% { opacity: .85; transform: scale(1.1); } }
+.halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(220, 235, 255, .75) 1.1px, transparent 1.7px); background-size: 7px 7px; -webkit-mask-image: radial-gradient(circle 230px at var(--mx) var(--my), rgba(0, 0, 0, .9), transparent 100%); mask-image: radial-gradient(circle 230px at var(--mx) var(--my), rgba(0, 0, 0, .9), transparent 100%); opacity: .55; }
+.vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 90% 80% at 50% 40%, transparent 35%, rgba(0, 0, 0, .65) 100%); }
+@media (prefers-reduced-motion: reduce) { .bokeh, .spark { animation: none; } .spark { opacity: .35; } }
+@media (max-width: 680px) { .halftone { display: none; } }
+
+/* buy / sell: small, flat, classic */
+.trade-actions { gap: 10px; }
+.trade-button { flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; height: 56px; padding: 0 22px; border-radius: 14px; font-size: 18px; font-weight: 700; letter-spacing: -.01em; box-shadow: none; filter: none; transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease; }
+.trade-button::after { display: none; }
+.trade-buy { background: rgba(48, 209, 88, .12); border: 1px solid rgba(48, 209, 88, .5); color: #4be07a; box-shadow: none; }
+.trade-sell { background: rgba(255, 69, 58, .12); border: 1px solid rgba(255, 69, 58, .5); color: #ff6a61; box-shadow: none; }
+.trade-buy:not(:disabled):hover { background: #30d158; color: #04200c; filter: none; transform: none; }
+.trade-sell:not(:disabled):hover { background: #ff453a; color: #fff; filter: none; transform: none; }
+.trade-button:not(:disabled):active { transform: scale(.98); filter: none; }
+.trade-button:disabled { opacity: .45; box-shadow: none; }
+.tb-sub { font-size: 14px; font-weight: 600; opacity: .75; }
+
+/* arrow on buy / sell */
+.tb-label { display: inline-flex; align-items: center; gap: 10px; }
+.tb-arrow { flex: none; }
