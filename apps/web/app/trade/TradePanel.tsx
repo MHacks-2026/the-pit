@@ -105,10 +105,18 @@ function TradeInner() {
 
   return (
     <div className="trade-panel">
+      <p className="trade-who">Trading as <strong>{view.me.name}</strong></p>
       <dl className="trade-stats">
+        <div><dt>Net worth</dt><dd>{Math.round(Number(view.me.cash) + view.position * mid).toLocaleString('en-US')}</dd></div>
+        <div>
+          <dt>Profit</dt>
+          <dd className={Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? 'rank-up' : 'rank-down'}>
+            {Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? '+' : '−'}{Math.abs(Math.round(Number(view.me.cash) + view.position * mid - 10_000)).toLocaleString('en-US')}
+          </dd>
+        </div>
         <div><dt>Cash</dt><dd>{Number(view.me.cash).toLocaleString('en-US')}</dd></div>
         <div><dt>Position</dt><dd>{view.position}</dd></div>
-        <div><dt>Last</dt><dd>{view.lastPrice ?? '–'}</dd></div>
+        <div><dt>Last price</dt><dd>{view.lastPrice ?? '–'}</dd></div>
         <div><dt>Bid / Ask</dt><dd>{view.bestBid ?? '–'} / {view.bestAsk ?? '–'}</dd></div>
       </dl>
 
@@ -134,8 +142,8 @@ function TradeInner() {
       <p className="join-hint">Order value: {(price * qty).toLocaleString('en-US')} play dollars</p>
 
       <div className="trade-actions">
-        <button className="trade-button trade-buy" type="button" disabled={busy} onClick={() => submit('buy')}>Buy</button>
-        <button className="trade-button trade-sell" type="button" disabled={busy} onClick={() => submit('sell')}>Sell</button>
+        <button className="trade-button trade-buy" type="button" disabled={busy} onClick={() => submit('buy')}><span>Buy</span><span className="tb-sub">{qty} @ {price}</span></button>
+        <button className="trade-button trade-sell" type="button" disabled={busy} onClick={() => submit('sell')}><span>Sell</span><span className="tb-sub">{qty} @ {price}</span></button>
       </div>
 
       {error ? <p className="join-error" role="alert">{error}</p> : null}
