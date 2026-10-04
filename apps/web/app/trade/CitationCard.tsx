@@ -31,6 +31,17 @@ function fallbackText(name: string, score: number, ev: Evidence | null): string 
   return `${name} was flagged by the Market Cop for suspicious order activity. Spoofing score ${score} out of 100.`;
 }
 
+// Coaching tip: a different idea for each repeat catch. It only restates the Cop's published rule.
+const COP_TIPS = [
+  'The Cop needs your opposite-side trade within 3 seconds of your wall. What if you wait longer?',
+  'The Cop needs 80% of your wall pulled within 5 seconds of your trade. What if you pull less?',
+  'The Cop looks for 3 or more orders at 2 or more prices. What if you use fewer orders, or one price?',
+];
+
+function coachingTip(catches: number): string {
+  return `Want to beat the Cop? ${COP_TIPS[(Math.max(1, catches) - 1) % COP_TIPS.length]}`;
+}
+
 function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const lines: string[] = [];
   let line = '';
@@ -263,6 +274,7 @@ export default function CitationCard({ myHex, name }: { myHex: string; name: str
   }, [alertId, text, name, no]);
 
   if (!alert) return null;
+  const tip = coachingTip(mine.length);
 
   function download() {
     const canvas = canvasRef.current;
@@ -282,6 +294,8 @@ export default function CitationCard({ myHex, name }: { myHex: string; name: str
     <div className="cite-box">
       <h3 className="trade-orders-title">You’ve been cited</h3>
       <p className="join-hint">The Market Cop caught you{mine.length > 1 ? ` ${mine.length} times. This is your latest citation.` : '. Here is your citation.'}</p>
+      <p className="join-hint" role="note"><strong>Coach:</strong> {tip}</p>
+      <p className="coaching-tip">{tip}</p>
       <canvas ref={canvasRef} className="cite-canvas" width={W} height={H} role="img" aria-label={`Citation ${no} for ${offense(alert.kind)}, score ${alert.score} out of 100`} />
       <button type="button" className="join-button" onClick={download}>Download citation</button>
     </div>
