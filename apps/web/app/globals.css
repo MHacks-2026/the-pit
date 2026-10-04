@@ -179,6 +179,27 @@ code { font: 1em var(--type); }
 .dc-ask { fill: url(#askFill); stroke: var(--down); stroke-width: 2; }
 .dc-mid { stroke: var(--muted); stroke-dasharray: 3 5; }
 
+/* Order book X-ray */
+.xray { grid-column: 1 / -1; border: 2px solid var(--ink); background: var(--paper); }
+.xray::before { content: ''; display: block; height: 10px; border-bottom: 2px solid var(--ink); background: repeating-linear-gradient(135deg, var(--cop) 0 12px, var(--ink) 12px 24px); }
+.xray-head { display: flex; align-items: baseline; gap: 8px 18px; flex-wrap: wrap; padding: 14px 18px 0; }
+.xray-head h3 { margin-bottom: 0; }
+.xray-head .quiet { flex: 1 1 280px; }
+.xray-reset { padding: 6px 12px; border: 2px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); font: 600 .875rem/1 var(--sans); cursor: pointer; }
+.xray-reset:hover:not(:disabled) { background: var(--ink); color: var(--panel); }
+.xray-reset:disabled { opacity: .4; cursor: default; }
+.xray-stage { padding: 4px 18px 0; }
+.xray-stage canvas { display: block; max-width: 100%; cursor: grab; touch-action: none; }
+.xray-stage canvas:active { cursor: grabbing; }
+.xray-stage canvas:focus-visible { outline: 3px solid var(--cop); outline-offset: 2px; }
+.xray-legend { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; padding: 10px 18px 14px; list-style: none; color: var(--muted); font-size: .875rem; font-weight: 600; }
+.xray-legend li { display: flex; align-items: center; gap: 8px; }
+.xray-legend i { display: inline-block; width: 18px; height: 10px; border: 2px solid var(--ink); }
+.xk-bid { background: var(--up); }
+.xk-ask { background: var(--down); }
+.xk-cop { background: repeating-linear-gradient(135deg, var(--cop) 0 4px, #1a1712 4px 8px); }
+.xk-trade { width: 10px !important; height: 10px !important; background: var(--cop); transform: rotate(45deg); }
+
 .tally { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); border-block: 2px solid var(--ink); }
 .tally > div { padding: 12px 16px; border-left: 2px solid var(--rule); }
 .tally > div:first-child { border-left: 0; padding-left: 0; }

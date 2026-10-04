@@ -6,6 +6,7 @@ import { tables } from '@the-pit/bindings';
 import { liveConnectionBuilder } from '../../lib/live';
 import { COP_PENALTY } from '../../lib/copScore';
 import DepthChart from './DepthChart';
+import DepthXray from './DepthXray';
 import PriceChart from './PriceChart';
 import TraderBadge from '../TraderBadge';
 import { SCREEN_TRADES_WINDOW_MS, useOpenAndRecentOrders, useRecentTrades } from '../../lib/subscriptions';
@@ -127,7 +128,12 @@ function Board() {
       ? [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0]
       : null;
 
+    const xrayOrders = open.map(o => ({ id: o.id.toString(), side: o.side === 'buy' ? 'buy' as const : 'sell' as const, price: o.price, remaining: o.remaining }));
+    const xrayTrades = marketTrades.slice(-200).map(t => ({ id: t.id.toString(), price: t.price }));
+    const evidence = alerts.map(al => al.evidence);
+
     return {
+      xrayOrders, xrayTrades, evidence,
       allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty,
       lastPrice, prevPrice, high, low, volume, sessionChange, sessionPct, tradeCount: marketTrades.length,
       tape, chart, leaderboard, copBoard,
@@ -204,6 +210,9 @@ function Board() {
         <h3 className="depth-title">Depth</h3>
         <DepthChart bids={allBids} asks={allAsks} />
       </section>
+
+      <DepthXray orders={view.xrayOrders} trades={view.xrayTrades} evidence={view.evidence}
+        bestBid={bestBid} bestAsk={bestAsk} lastPrice={lastPrice} />
 
       <dl className="tally">
         <div><dt>Traders</dt><dd>{view.humans}<small> and {view.bots} bots</small></dd></div>

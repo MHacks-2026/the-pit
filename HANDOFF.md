@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [T30/T36] Order book X-ray on the Big Screen, Claude Code -> next
+Branch: FrontEndChanges
+Done: Full-width "Order book X-ray" panel under the price on /screen: the live HACK book sampled every 400 ms into 72 rows (~30 s), drawn as a 3D ridge landscape on a canvas (price across, time into the screen, depth as height; bids green, asks red). No highlighting until the Cop raises an alert; then that alert's layerOrderIds are hazard-striped back through the history, with a "Wall: N units" tag and a diamond on oppositeTradeId. Drag or arrow keys turn it, Reset view restores it. Colours come from the theme (light and dark). Pure logic in apps/web/lib/xray.ts, 6 tests. Checked live with a spoof at 1440 and 390 px, light and dark.
+Not done / next: phantomScore (rest of T30/T36) is still open. No 2D fallback beyond the existing Depth chart.
+Gotchas: The history starts when the page opens (nothing is fetched retroactively). Preview on localhost, not 127.0.0.1 (Next 16 blocks dev assets on other origins, so the page never hydrates).
+How to verify: pnpm test && pnpm build; open /screen and run a spoof
+Files touched: apps/web/lib/{xray.ts,xray.test.ts}, apps/web/app/screen/{DepthXray.tsx,MarketBoard.tsx}, apps/web/app/globals.css, HANDOFF.md
+
+---
+
 ## [UI] Case-file restyle + merge of main into FrontEndChanges, Claude Code -> next
 Branch: FrontEndChanges
 Done: Merged origin/main (Shafir's focused Cop incident + recent cases) into this branch; AlertFeed keeps Shafir's layout and adds badges, the shared token connection (join fix), the police-tape sweep, the ElevenLabs voice and a "Cited" stamp on newly arrived cases. Restyled every page in the case-file format: tan paper, cream sheet with a folder tab, 2px ink rules, square corners, Special Elite (typewriter) titles and Cop text, Barlow Semi Condensed for everything else, hazard stripes on Cop panels, red stamp; dark palette follows the device setting (text on Cop yellow stays dark). Teal chart line kept (darker on paper); cursor halftone kept as ink dots printed over the page. Checked at 390 px and 1440 px, light and dark, with a live spoof.
