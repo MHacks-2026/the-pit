@@ -72,6 +72,13 @@ try {
   $env:PIT_COP_RUNNER_ACTIVE = 'true'
   & corepack pnpm exec vitest run apps/runner/test/cop-path.test.ts
   if ($LASTEXITCODE -ne 0) { throw 'Cop acceptance test failed.' }
+  Push-Location -LiteralPath $runnerDirectory
+  try {
+    & $node --import tsx src/audit-cli.ts
+    if ($LASTEXITCODE -ne 0) { throw 'Disposable exchange audit failed.' }
+  } finally {
+    Pop-Location
+  }
   Write-Host "All disposable database acceptance tests passed for $database."
 } finally {
   if ($runner -and -not $runner.HasExited) { & taskkill.exe /PID $runner.Id /T /F | Out-Null }
