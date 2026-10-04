@@ -1,3 +1,4 @@
+param([switch]$Load)
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -76,6 +77,12 @@ try {
   try {
     & $node --import tsx src/audit-cli.ts
     if ($LASTEXITCODE -ne 0) { throw 'Disposable exchange audit failed.' }
+    if ($Load) {
+      & $node --import tsx src/load-test.ts
+      if ($LASTEXITCODE -ne 0) { throw 'Disposable load test failed.' }
+      & $node --import tsx src/audit-cli.ts
+      if ($LASTEXITCODE -ne 0) { throw 'Post-load exchange audit failed.' }
+    }
   } finally {
     Pop-Location
   }
