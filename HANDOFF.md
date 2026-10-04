@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [ElevenLabs voice merge] 11:50 CEST, Claude Code -> team
+Branch: main (pushed)
+Done: Merged feature/elevenlabs-voice into main, on top of the 3D X-ray. Switched the default Cop voice from Daniel to ElevenLabs premade "Brian" (nPczCjzI2devNBz1zQrb, deep and warm American male) with steady voice_settings. An unset or empty ELEVENLABS_VOICE_ID now falls back to Brian (was `??`, so an empty value broke the call). Playback stays button-only ("Hear alert"). 126 tests and the full build pass.
+Not done / next: After deploy, open /screen, select an alert and press Hear alert. The button only shows when ELEVENLABS_API_KEY is set in Vercel.
+Gotchas: If Vercel still has ELEVENLABS_VOICE_ID=onwK4e9ZLuTAKqWW03F9 (Daniel), it overrides Brian. Delete it or set it to nPczCjzI2devNBz1zQrb. The key was not live-tested from this session.
+How to verify: `pnpm test`, `pnpm build`; GET /api/speech returns {"available":true} in production.
+Files touched: merge of feature/elevenlabs-voice, apps/web/lib/speech{,.test}.ts, apps/web/app/api/speech/route.ts, README.md, HANDOFF.md.
+
+---
+
 ## [T30/T36 3D X-ray] 11:25 CEST, Claude Code -> team
 Branch: main (pushed)
 Done: Added a Market X-ray card to /screen, directly under Market depth (Cop and Tape span both rows beside it; stacked after depth on narrow screens). It is a plain-canvas 3D wireframe of the live HACK book: one row every 400 ms for 30 s, newest in front, drag/arrow keys to rotate, Reset view. Bids/asks use --buy/--sell. Orders named in a HACK spoofing alert's layerOrderIds are hatched in --cop with a "Wall: N units" label, and its oppositeTradeId gets a diamond. Other trades are small dots. No new dependencies, no new colors. 121 tests and the full build pass.
@@ -22,6 +32,16 @@ Not done / next: Check it against the live database during a Beat-the-Cop run. p
 Gotchas: History is client-side and starts empty, so it fills over 30 s after a page load. Headless Chrome screenshots do not run requestAnimationFrame unless driven over CDP.
 How to verify: Open /screen, wait 30 s, then rotate. Run the cheat from /trade and watch the wall hatch after the alert.
 Files touched: apps/web/app/screen/{DepthXray.tsx,MarketBoard.tsx}, apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
+## [ElevenLabs voice] 17:25 CEST, Codex -> team
+Branch: feature/elevenlabs-voice (pending push)
+Done: Validated the new account key with ElevenLabs, selected its male Daniel broadcaster voice, and generated a short private sample. Added a server-only `/api/speech` route with input limits, per-instance rate limit, audio cache, provider timeout, and a configuration check. Added **Hear alert** on the Market Cop screen; it appears only when voice is configured. Added four speech tests and updated env/README docs. Local app returned MP3 audio; 125 active tests and full workspace build passed. The key lives only in ignored `apps/web/.env.local` and is absent from Git.
+Not done / next: Replace Vercel production `ELEVENLABS_API_KEY`, set `ELEVENLABS_VOICE_ID=onwK4e9ZLuTAKqWW03F9`, then deploy the branch to main and test the live button. The connected Vercel account does not have access to the-pit; awaiting the project owner’s access route.
+Gotchas: No browser session is available to edit Vercel. The local MP3 sample is under ignored `.tools`.
+How to verify: `pnpm test`, `pnpm build`; set server env vars, open `/screen`, select an alert, and press **Hear alert**.
+Files touched: .gitignore, .env.example, README.md, apps/web/app/api/speech/route.ts, apps/web/lib/speech.ts and test, apps/web/app/screen/AlertFeed.tsx, apps/web/app/terminal.css, HANDOFF.md.
 
 ---
 
