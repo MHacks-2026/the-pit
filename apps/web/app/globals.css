@@ -14,6 +14,7 @@
   --up: #4ade80;
   --down: #ff6b5e;
   --tape: #ffd23f;
+  --chart: #5ccfe6;
   --display: var(--font-display), 'Arial Narrow', 'Helvetica Neue', sans-serif;
   --text: var(--font-text), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --radius: 14px;
@@ -36,8 +37,20 @@ code { font: 600 .95em/1 var(--text); letter-spacing: .02em; }
 .quiet { color: var(--dim); font-size: .875rem; }
 .state { padding: 40px 0; color: var(--dim); font-size: 1.125rem; }
 
+/* Backdrop: slow washes of pit green and chalk, and the halftone spotlight that follows the pointer */
+.backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; --mx: 70vw; --my: 30vh; }
+.wash { position: absolute; border-radius: 50%; will-change: transform; animation: wash-drift 70s ease-in-out infinite alternate; }
+.wash-green { left: -18vmax; bottom: -26vmax; width: 70vmax; height: 70vmax; background: radial-gradient(circle, rgba(74, 222, 128, .13), rgba(74, 222, 128, .04) 42%, transparent 68%); }
+.wash-chalk { right: -16vmax; top: -24vmax; width: 60vmax; height: 60vmax; background: radial-gradient(circle, rgba(236, 237, 232, .075), rgba(236, 237, 232, .02) 45%, transparent 68%); animation-duration: 85s; animation-delay: -30s; }
+.wash-green-2 { right: 8vmax; bottom: 4vmax; width: 34vmax; height: 34vmax; background: radial-gradient(circle, rgba(92, 207, 230, .06), rgba(74, 222, 128, .03) 50%, transparent 70%); animation-duration: 95s; animation-delay: -55s; }
+@keyframes wash-drift { to { transform: translate(6vmax, -5vmax) scale(1.08); } }
+.halftone { position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(236, 237, 232, .7) 1.1px, transparent 1.7px); background-size: 7px 7px;
+  -webkit-mask-image: radial-gradient(circle 230px at var(--mx) var(--my), rgba(0, 0, 0, .9), transparent 100%);
+  mask-image: radial-gradient(circle 230px at var(--mx) var(--my), rgba(0, 0, 0, .9), transparent 100%); opacity: .5; }
+@media (max-width: 680px), (hover: none) { .halftone { display: none; } }
+
 /* Page frame */
-.page { width: min(1440px, 100%); margin: 0 auto; padding: 32px clamp(16px, 4vw, 56px) 40px; display: flex; flex-direction: column; gap: 40px; }
+.page { position: relative; z-index: 1; width: min(1440px, 100%); margin: 0 auto; padding: 32px clamp(16px, 4vw, 56px) 40px; display: flex; flex-direction: column; gap: 40px; }
 .page-screen { width: min(1800px, 100%); }
 .page-phone { width: min(620px, 100%); gap: 28px; }
 
@@ -111,11 +124,11 @@ code { font: 600 .95em/1 var(--text); letter-spacing: .02em; }
 .pchart, .dchart { display: block; width: 100%; height: auto; overflow: visible; }
 .pc-grid { stroke: var(--rule); stroke-width: 1; }
 .pc-axis { fill: var(--dim); font: 12px var(--text); }
-.pc-line { fill: none; stroke: var(--chalk); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.pc-line { fill: none; stroke: var(--chart); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
 .pc-last { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 3 5; }
-.pc-halo { fill: var(--chalk); opacity: .16; }
-.pc-dot, .pc-hdot { fill: var(--chalk); }
-.pc-tag { fill: var(--chalk); }
+.pc-halo { fill: var(--chart); opacity: .22; }
+.pc-dot, .pc-hdot { fill: var(--chart); }
+.pc-tag { fill: var(--chart); }
 .pc-tagtext { fill: var(--floor); font: 700 13px var(--display); }
 .pc-cross { stroke: var(--dim); stroke-width: 1; }
 .pc-tip { fill: var(--floor-3); stroke: var(--rule); }
@@ -280,5 +293,5 @@ code { font: 600 .95em/1 var(--text); letter-spacing: .02em; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  .mq-track { animation: none; }
+  .mq-track, .wash { animation: none; }
 }
