@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI terminal sizing] 16:34 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Enlarged the fixed BTC flash-order viewport from 180 to 270px. Capped expanded Cop evidence at 410px/55vh with a keyboard-focusable scroll list, so many findings cannot stretch the screen. Gave Buy/Sell solid dark green/red fills, with visible disabled states. Boxed the QR/join control with a thin rounded border, increased space above the ticker, and enlarged/raised THE PIT wordmark. All 121 active tests and the full build pass.
+Not done / next: Shafir reviews the changes in local Edge; merge or push main only after approval. Vercel branch preview still needs its scoped preview database variable.
+Gotchas: The local QR encodes localhost and is only a visual preview; it will encode the deployed preview origin there. Browser automation did not expose a controllable Edge tab for visual measurement.
+How to verify: Refresh `http://localhost:3000/screen`, open View evidence with many findings and scroll inside it; inspect BTC flash scrolling and `/trade` buttons.
+Files touched: apps/web/app/{screen/AlertFeed.tsx,terminal.css}, HANDOFF.md.
+
+---
+
 ## [UI terminal refinements] 16:27 CEST, Codex -> team
 Branch: ui/terminal-layout-preview (local review; main unchanged)
 Done: Enlarged the QR and separated the header from the ticker. Fixed the ticker to twelve equal-width slots per loop and a constant GPU-friendly animation, preserving pause and reduced-motion controls. Fixed the BTC flash-order list height with its own keyboard-scrollable area. Moved order book into the first market row, Cop into the left half below, and tape/depth into its right half. Restored the Cop focus/recent side-by-side layout on wide screens while retaining flat terminal styling. Removed “Play money only”, spaced chart tabs below bid/ask/spread, and added a teal horizontal/vertical chart crosshair with restrained accent rules.

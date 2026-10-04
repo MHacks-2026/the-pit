@@ -90,7 +90,7 @@ function FeedContent() {
         <p className="cop-count">{selected.entries.length} finding{selected.entries.length === 1 ? '' : 's'} shown · Pattern match, not proof of intent</p>
         <details className="cop-evidence">
           <summary>View evidence</summary>
-          <ol>
+          <ol tabIndex={0} aria-label="Finding evidence">
             {selected.entries.map(({ alert }) => <li key={alert.id.toString()}>
               <div className="cop-finding-head"><strong>Finding #{alert.id.toString()}</strong>
                 <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
