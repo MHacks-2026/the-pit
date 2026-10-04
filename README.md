@@ -356,6 +356,6 @@ Summarised from [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md), which also has a o
 
 ## Team
 
-Built at MHacks 2026 by **Rajvansh Ratti**, **Prasiddha Poudyal**, **Shafir** and **Charvik**.
+Built at MHacks 2026 by **Rajvansh Ratti**, **Prasiddha Poudyal**, **Shafir Khajo** and **Charvik Reddy Mukku**.
 
 Thanks to the MHacks organisers, SpacetimeDB (Clockwork Labs) and ElevenLabs.
