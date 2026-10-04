@@ -29,6 +29,7 @@ function TradeInner() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const validOrder = Number.isSafeInteger(price) && price >= 1 && Number.isInteger(qty) && qty >= 1 && qty <= MAX_ORDER_QTY;
 
   const myHex = identity ? identity.toHexString() : null;
 
@@ -64,6 +65,10 @@ function TradeInner() {
   }, [priceSet, tradesReady, view.lastPrice]);
 
   async function submit(side: Side) {
+    if (!validOrder) {
+      setError('Enter a positive whole-number price and a quantity from 1 to 50.');
+      return;
+    }
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -107,7 +112,47 @@ function TradeInner() {
 
   return (
     <div className="trade-panel">
+      <section className="trade-entry" aria-label="Order entry">
       <p className="trade-who">Trading as <strong>{view.me.name}</strong></p>
+
+      <div className="trade-steppers">
+        <div className="stepper">
+          <span className="join-label" id="price-label">Price</span>
+          <div className="stepper-row" role="group" aria-labelledby="price-label">
+            <button className="stepper-button" type="button" aria-label="Decrease price" onClick={() => setPrice(Math.max(1, price - 1))}>−</button>
+            <input className="stepper-value" type="number" inputMode="numeric" min="1" step="1" aria-labelledby="price-label" value={price}
+              onFocus={event => event.currentTarget.select()}
+              onChange={event => { const next = Number(event.target.value); setPrice(Number.isFinite(next) ? Math.trunc(next) : 0); }}
+              onBlur={() => setPrice(current => Number.isSafeInteger(current) ? Math.max(1, current) : 1)} />
+            <button className="stepper-button" type="button" aria-label="Increase price" onClick={() => setPrice(price + 1)}>+</button>
+          </div>
+        </div>
+        <div className="stepper">
+          <span className="join-label" id="qty-label">Quantity</span>
+          <div className="stepper-row" role="group" aria-labelledby="qty-label">
+            <button className="stepper-button" type="button" aria-label="Decrease quantity" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+            <input className="stepper-value" type="number" inputMode="numeric" min="1" max={MAX_ORDER_QTY} step="1" aria-labelledby="qty-label" value={qty}
+              onFocus={event => event.currentTarget.select()}
+              onChange={event => { const next = Number(event.target.value); setQty(Number.isFinite(next) ? Math.min(MAX_ORDER_QTY, Math.trunc(next)) : 0); }}
+              onBlur={() => setQty(current => Math.max(1, current))} />
+            <button className="stepper-button" type="button" aria-label="Increase quantity" onClick={() => setQty(Math.min(MAX_ORDER_QTY, qty + 1))}>+</button>
+          </div>
+        </div>
+      </div>
+
+      <p className="join-hint">Order value: {(price * qty).toLocaleString('en-US')} play dollars</p>
+
+      <div className="trade-actions">
+        <button className="trade-button trade-buy" type="button" disabled={busy || !validOrder} onClick={() => submit('buy')}><span className="tb-label"><svg className="tb-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5 12.5 11.5H1.5Z" fill="currentColor" /></svg>Buy</span><span className="tb-sub">{qty} @ {price}</span></button>
+        <button className="trade-button trade-sell" type="button" disabled={busy || !validOrder} onClick={() => submit('sell')}><span className="tb-label"><svg className="tb-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5 1.5 2.5H12.5Z" fill="currentColor" /></svg>Sell</span><span className="tb-sub">{qty} @ {price}</span></button>
+      </div>
+
+      {error ? <p className="join-error" role="alert">{error}</p> : null}
+      {message ? <p className="join-status" role="status">{message}</p> : null}
+
+      </section>
+
+      <section className="trade-account" aria-label="Account and open orders">
       <dl className="trade-stats">
         <div><dt>Net worth</dt><dd>{Math.round(Number(view.me.cash) + view.position * mid).toLocaleString('en-US')}</dd></div>
         <div>
@@ -121,35 +166,6 @@ function TradeInner() {
         <div><dt>Last price</dt><dd>{view.lastPrice ?? '–'}</dd></div>
         <div><dt>Bid / Ask</dt><dd>{view.bestBid ?? '–'} / {view.bestAsk ?? '–'}</dd></div>
       </dl>
-
-      <div className="trade-steppers">
-        <div className="stepper">
-          <span className="join-label" id="price-label">Price</span>
-          <div className="stepper-row" role="group" aria-labelledby="price-label">
-            <button className="stepper-button" type="button" aria-label="Decrease price" onClick={() => setPrice(Math.max(1, price - 1))}>−</button>
-            <output className="stepper-value">{price}</output>
-            <button className="stepper-button" type="button" aria-label="Increase price" onClick={() => setPrice(price + 1)}>+</button>
-          </div>
-        </div>
-        <div className="stepper">
-          <span className="join-label" id="qty-label">Quantity</span>
-          <div className="stepper-row" role="group" aria-labelledby="qty-label">
-            <button className="stepper-button" type="button" aria-label="Decrease quantity" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-            <output className="stepper-value">{qty}</output>
-            <button className="stepper-button" type="button" aria-label="Increase quantity" onClick={() => setQty(Math.min(MAX_ORDER_QTY, qty + 1))}>+</button>
-          </div>
-        </div>
-      </div>
-
-      <p className="join-hint">Order value: {(price * qty).toLocaleString('en-US')} play dollars</p>
-
-      <div className="trade-actions">
-        <button className="trade-button trade-buy" type="button" disabled={busy} onClick={() => submit('buy')}><span className="tb-label"><svg className="tb-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5 12.5 11.5H1.5Z" fill="currentColor" /></svg>Buy</span><span className="tb-sub">{qty} @ {price}</span></button>
-        <button className="trade-button trade-sell" type="button" disabled={busy} onClick={() => submit('sell')}><span className="tb-label"><svg className="tb-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5 1.5 2.5H12.5Z" fill="currentColor" /></svg>Sell</span><span className="tb-sub">{qty} @ {price}</span></button>
-      </div>
-
-      {error ? <p className="join-error" role="alert">{error}</p> : null}
-      {message ? <p className="join-status" role="status">{message}</p> : null}
 
       <h3 className="trade-orders-title">Open orders</h3>
       {view.mine.length === 0 ? (
@@ -166,9 +182,13 @@ function TradeInner() {
         </ul>
       )}
 
+      </section>
+
+      <div className="trade-extras">
       <BeatTheCop myHex={myHex ?? ''} cash={Number(view.me.cash)} position={view.position} mid={mid} lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
 
       <CitationCard myHex={myHex ?? ''} name={view.me.name} />
+      </div>
     </div>
   );
 }

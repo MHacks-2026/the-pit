@@ -89,8 +89,8 @@ export default function PriceChart({ points }: { points: PricePoint[] }) {
       >
         <defs>
           <linearGradient id="pcFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#64d2ff" stopOpacity=".22" />
-            <stop offset="1" stopColor="#64d2ff" stopOpacity="0" />
+            <stop offset="0" stopColor="#39c6be" stopOpacity=".18" />
+            <stop offset="1" stopColor="#39c6be" stopOpacity="0" />
           </linearGradient>
         </defs>
         {ticks.map((t, i) => (
@@ -111,6 +111,7 @@ export default function PriceChart({ points }: { points: PricePoint[] }) {
         {hp ? (
           <g pointerEvents="none">
             <line className="pc-cross" x1={hx} x2={hx} y1={PT} y2={PT + plotH} />
+            <line className="pc-cross" x1={0} x2={plotW} y1={hy} y2={hy} />
             <circle className="pc-hdot" cx={hx} cy={hy} r={4.5} />
             <g transform={`translate(${tipX},${PT})`}>
               <rect className="pc-tip" width={tipW} height={40} rx={8} />

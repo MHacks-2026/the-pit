@@ -68,7 +68,7 @@ export default function BeatTheCop({ myHex, cash, position, mid, lastPrice, best
     <div className="cop-box">
       <h3 className="trade-orders-title">Beat the Cop</h3>
       <p className="join-hint">
-        You have {CHALLENGE_SECONDS} seconds. Make money any way you like, even by cheating, but every Market Cop alert against you costs {COP_PENALTY} points.
+        {CHALLENGE_SECONDS}s round · {COP_PENALTY} points per Cop alert.
       </p>
       <button className="cop-button" type="button" disabled={run !== null} onClick={start}>
         {run ? `${left}s left` : result ? 'Play again' : 'Start the challenge'}

@@ -63,14 +63,14 @@ function TickerInner() {
     }
     const recent = [...alerts].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1)).slice(0, 3);
     for (const al of recent) {
-      out.push({ id: `a${al.id}`, kind: 'cop', label: `Cop alert · ${al.kind.charAt(0).toUpperCase()}${al.kind.slice(1).replaceAll('_', ' ')} on ${nameByKey.get(al.owner.toHexString()) ?? 'a trader'} ·`, value: `${al.score}/100` });
+      out.push({ id: `a${al.id}`, kind: 'cop', label: `Cop pattern · ${al.kind.replaceAll('_', ' ')} on`, value: nameByKey.get(al.owner.toHexString()) ?? 'a trader' });
     }
     if (news.length) {
       const n = [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0];
       out.push({ id: 'news', kind: 'news', label: 'News ·', value: n.text });
     }
     if (leader) out.push({ id: 'lead', kind: 'leader', label: `Leader · ${leader.name}`, value: signed(leader.net - START_CASH) });
-    out.push({ id: 'cta', kind: 'cta', label: 'Scan to trade ·', value: 'the-pit-seven.vercel.app/join' });
+    out.push({ id: 'cta', kind: 'cta', label: 'Join this market ·', value: '/join' });
     return out;
   }, [orders, trades, accounts, positions, alerts, news]);
 

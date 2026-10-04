@@ -154,7 +154,7 @@ function Board() {
         <div><dt>Cop alerts</dt><dd className={view.alertCount > 0 ? 'stat-amber' : undefined}>{fmt(view.alertCount)}</dd></div>
       </dl>
 
-      <section className="board-card" aria-label="Price">
+      <section className="board-card terminal-price" aria-label="Price">
         <div className="board-cardhead"><h3>HACK</h3><span className="board-chip">Play dollars</span></div>
         <div className="board-hero">
           <p key={lastPrice ?? 'none'} className={`board-price flash-${dir}`}>{lastPrice === null ? '—' : lastPrice}</p>
@@ -178,7 +178,7 @@ function Board() {
         </dl>
       </section>
 
-      <section className="board-card" aria-label="Order book">
+      <section className="board-card terminal-book" aria-label="Order book">
         <div className="board-cardhead"><h3>Order book</h3>{spread !== null ? <span className="board-chip">Spread {spread}</span> : null}</div>
         <div className="book-cols">
           <div>
@@ -206,12 +206,12 @@ function Board() {
         </div>
       </section>
 
-      <section className="board-card" aria-label="Market depth">
+      <section className="board-card terminal-depth" aria-label="Market depth">
         <div className="board-cardhead"><h3>Market depth</h3><span className="board-chip">Total size by price</span></div>
         <DepthChart bids={allBids} asks={allAsks} />
       </section>
 
-      <section className="board-card" aria-label="Trade tape">
+      <section className="board-card terminal-tape" aria-label="Trade tape">
         <div className="board-cardhead"><h3>Tape</h3><span className="board-chip">Latest trades</span></div>
         {tape.length === 0 ? <p className="board-sub">No trades yet.</p> : (
           <ol className="board-list">
@@ -229,7 +229,7 @@ function Board() {
         )}
       </section>
 
-      <section className="board-card" aria-label="Leaderboard">
+      <section className="board-card terminal-leaders" aria-label="Leaderboard">
         <div className="board-cardhead"><h3>Leaderboard</h3><span className="board-chip">Net worth, bots marked 🤖</span></div>
         {leaderboard.length === 0 ? <p className="board-sub">No traders yet.</p> : (
           <ol className="board-list">
@@ -249,7 +249,7 @@ function Board() {
         )}
       </section>
 
-      <section className="board-card" aria-label="Beat the Cop">
+      <section className="board-card terminal-beat" aria-label="Beat the Cop">
         <div className="board-cardhead"><h3>Beat the Cop</h3><span className="board-chip">Humans only</span></div>
         {copBoard.length === 0 ? <p className="board-sub">No players yet.</p> : (
           <ol className="board-list">

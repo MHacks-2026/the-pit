@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
 import './globals.css';
-import Backdrop from './Backdrop';
+import './terminal.css';
 
 const geist = Geist({ subsets: ['latin'], display: 'swap', variable: '--font-geist' });
 
@@ -9,7 +9,6 @@ export const metadata: Metadata = { title: 'THE PIT | Market Cop', description: 
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={geist.variable}><body>
-    <Backdrop />
     {children}
   </body></html>;
 }

@@ -15,6 +15,76 @@ Files touched: <list>
 
 ---
 
+## [UI terminal main merge] 16:45 CEST, Codex -> team
+Branch: main (merged ui/terminal-layout-preview after origin/main 62fc6a0)
+Done: Preserved the latest team README and citation coaching tip, then merged the reviewed terminal UI without conflicts. The full merged tree passed 121 active tests and `pnpm build`; six integration tests remain skipped by their existing configuration. No SpacetimeDB module, shared type, or runner changes. The UI retains live actions, Cop evidence and scrolling, BTC watch, and isolated preview safety guard.
+Not done / next: Check Vercel production deployment and `/screen`, `/trade`, `/join` in the browser after push. The local background dev server still points at the isolated preview database; it is not production.
+Gotchas: Preview QR uses an external QR image service to encode the current origin. Production still uses its existing static QR asset. The branch-specific Preview database variable remains necessary for a working branch preview.
+How to verify: `pnpm test`, `pnpm build`; review production routes after Vercel reports ready.
+Files touched: HANDOFF.md for merge handoff; merged UI files from ui/terminal-layout-preview.
+
+---
+
+## [Cop scroll regions] 16:39 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Replaced evidence list overflow with an explicit keyboard-focusable scroll region capped at 410px/55vh. Added a separate recent-case scroll region capped at 280px and raised its display limit from five to ten cases. Raised the source window from 24 to 100 alerts so repeated findings from one account do not crowd every other recent case out.
+Not done / next: Shafir checks wheel, trackpad, touch and keyboard scrolling in local Edge. Do not merge to main until approved.
+Gotchas: Recent rows are alert cases, so a trader can appear more than once if incidents are separate. Nothing changes in detection or stored alerts.
+How to verify: Refresh `http://localhost:3000/screen`, expand View evidence for a case with several findings, scroll inside it, then scroll and select an older Recent case.
+Files touched: apps/web/app/screen/AlertFeed.tsx, apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
+## [UI QR unboxed] 16:36 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Removed the thin card border, background and padding from the QR/join group in both preview and production header styles. Kept the enlarged QR, join link and added space above the ticker. Local `/screen` responds.
+Not done / next: Shafir reviews in Edge; do not merge to main until approved.
+Gotchas: This is a CSS-only correction after the previous passing test/build gate.
+How to verify: Refresh `http://localhost:3000/screen`.
+Files touched: apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
+## [UI terminal sizing] 16:34 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Enlarged the fixed BTC flash-order viewport from 180 to 270px. Capped expanded Cop evidence at 410px/55vh with a keyboard-focusable scroll list, so many findings cannot stretch the screen. Gave Buy/Sell solid dark green/red fills, with visible disabled states. Boxed the QR/join control with a thin rounded border, increased space above the ticker, and enlarged/raised THE PIT wordmark. All 121 active tests and the full build pass.
+Not done / next: Shafir reviews the changes in local Edge; merge or push main only after approval. Vercel branch preview still needs its scoped preview database variable.
+Gotchas: The local QR encodes localhost and is only a visual preview; it will encode the deployed preview origin there. Browser automation did not expose a controllable Edge tab for visual measurement.
+How to verify: Refresh `http://localhost:3000/screen`, open View evidence with many findings and scroll inside it; inspect BTC flash scrolling and `/trade` buttons.
+Files touched: apps/web/app/{screen/AlertFeed.tsx,terminal.css}, HANDOFF.md.
+
+---
+
+## [UI terminal refinements] 16:27 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Enlarged the QR and separated the header from the ticker. Fixed the ticker to twelve equal-width slots per loop and a constant GPU-friendly animation, preserving pause and reduced-motion controls. Fixed the BTC flash-order list height with its own keyboard-scrollable area. Moved order book into the first market row, Cop into the left half below, and tape/depth into its right half. Restored the Cop focus/recent side-by-side layout on wide screens while retaining flat terminal styling. Removed “Play money only”, spaced chart tabs below bid/ask/spread, and added a teal horizontal/vertical chart crosshair with restrained accent rules.
+Not done / next: Shafir reviews local Edge at desktop and mobile widths. No main merge or push without approval. Vercel branch preview still needs branch-scoped database variable.
+Gotchas: Automated Edge visual inspection is unavailable in this environment; local route responds and browser review remains useful. Flash rows remain in the DOM but clip and scroll inside the fixed viewport.
+How to verify: `pnpm test`, `pnpm build`; refresh `http://localhost:3000/screen`, inspect ticker loop, Cop layout, chart hover, and BTC flash scrolling.
+Files touched: apps/web/app/{PageHeader.tsx,PreviewQr.tsx,screen/MarketWatchPanel.tsx,screen/Marquee.tsx,screen/PriceChart.tsx,terminal.css}, HANDOFF.md.
+
+---
+
+## [UI terminal polish] 16:13 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Removed decorative subtitle, repeated join guidance, BTC explainer paragraph, footer slogan, and redundant labels. Restored a visible preview QR next to the Join this market link; the QR encodes the current page origin plus `/join`, while production retains its original QR asset. Added direct numeric price/quantity entry, larger phone step buttons, wider spacing and larger touch targets. Kept positive integer/quantity limits before order submission. Local `/screen`, `/trade`, `/join` use the isolated preview database.
+Not done / next: Shafir reviews the local Edge UI. Merge to main only after approval. Vercel branch preview remains blocked until branch-scoped database env is configured.
+Gotchas: Preview QR image comes from api.qrserver.com and contains only the public join URL. A localhost QR cannot be scanned from another phone; deployed preview QR uses its public origin. No dependencies added.
+How to verify: `pnpm test`, `pnpm build`, inspect desktop and phone widths, type values and use step buttons on `/trade`.
+Files touched: apps/web/app/{PageHeader.tsx,JoinBadge.tsx,PreviewQr.tsx,terminal.css,screen,trade,join}, HANDOFF.md.
+
+---
+
+## [UI terminal preview] 15:25 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (three UI commits, no main merge)
+Done: Added a restrained full-width shell, a divided /screen grid with HACK, Cop and BTC visible together on wide displays, a two-column /trade desk, and an unboxed /join form. Ticker omits the misleading 100/100 wording. Preview join links stay on the preview host. Created isolated Maincloud database `the-pit-ui-terminal-preview`, published the unchanged module, and started its own in-database bots. All 121 active tests and the full build pass after each UI commit.
+Not done / next: Set branch-specific Vercel Preview `NEXT_PUBLIC_SPACETIME_DB=the-pit-ui-terminal-preview` (and browser-reachable `NEXT_PUBLIC_SPACETIME_URI=wss://maincloud.spacetimedb.com`) in the team's Vercel project, redeploy, then check four viewport widths and join/trade/cancel/Cop flows. Current Vercel connector sees a different account with no team project.
+Gotchas: The branch preview build fails closed if its database variable is not the isolated database. Never use the production database for preview tests. `FrontEndChanges` remains separate.
+How to verify: `pnpm test`, `pnpm build`, then inspect the branch Vercel preview and its isolated database.
+Files touched: apps/web/app/{terminal.css,layout.tsx,JoinBadge.tsx,Ticker.tsx,screen,trade,join}, apps/web/next.config.ts, HANDOFF.md.
+
+---
+
 ## [Cop dashboard] 14:49 CEST, Codex -> team
 Branch: main (compact alert screen built from feat/cop-investigation-preview)
 Done: Reworked `/screen` surveillance display into one selected incident and a five-row recent list. It follows the newest case by default; selecting an older case keeps it visible while more alerts arrive, and Latest restores live focus. Each case shows suspected pattern, trader, time, one-line order/trade/cancel sequence, and a count. View evidence reveals each original finding with order IDs, price levels, trade ID and cancelled quantity. Removed the misleading 100/100 badge and long repeated narration from this view; alert data and detection are unchanged. Full test/build passed (121 unit tests).
