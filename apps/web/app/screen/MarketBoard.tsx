@@ -5,6 +5,7 @@ import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react
 import { DbConnection, tables } from '@the-pit/bindings';
 import { COP_PENALTY } from '../../lib/copScore';
 import DepthChart from './DepthChart';
+import DepthXray from './DepthXray';
 import PriceChart from './PriceChart';
 import { SCREEN_TRADES_WINDOW_MS, useOpenAndRecentOrders, useRecentTrades } from '../../lib/subscriptions';
 
@@ -120,7 +121,22 @@ function Board() {
       ? [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0]
       : null;
 
+    // X-ray: the live book plus the order and trade ids named in HACK spoofing alerts.
+    const xrayOrders = open.map(o => ({ id: Number(o.id), side: o.side === 'buy' ? 'buy' as const : 'sell' as const, price: o.price, qty: o.remaining }));
+    const xrayTrades = marketTrades.map(t => ({ id: Number(t.id), price: t.price }));
+    const flaggedOrders = new Set<number>();
+    const flaggedTrades = new Set<number>();
+    for (const al of alerts) {
+      try {
+        const ev = JSON.parse(al.evidence) as { marketId?: unknown; layerOrderIds?: unknown; oppositeTradeId?: unknown };
+        if (ev.marketId !== HACK_MARKET_ID) continue;
+        if (Array.isArray(ev.layerOrderIds)) for (const id of ev.layerOrderIds) if (typeof id === 'number') flaggedOrders.add(id);
+        if (typeof ev.oppositeTradeId === 'number') flaggedTrades.add(ev.oppositeTradeId);
+      } catch { /* malformed evidence: nothing to flag */ }
+    }
+
     return {
+      xrayOrders, xrayTrades, flaggedOrders, flaggedTrades,
       allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty,
       lastPrice, prevPrice, high, low, volume, sessionChange, sessionPct, tradeCount: marketTrades.length,
       tape, chart, leaderboard, copBoard,
@@ -176,6 +192,11 @@ function Board() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section className="board-card terminal-xray" aria-label="Market X-ray">
+        <div className="board-cardhead"><h3>Market X-ray</h3><span className="board-chip">Order depth, last 30 s. Drag to rotate.</span></div>
+        <DepthXray orders={view.xrayOrders} trades={view.xrayTrades} flaggedOrders={view.flaggedOrders} flaggedTrades={view.flaggedTrades} />
       </section>
 
       <section className="board-card terminal-book" aria-label="Order book">
