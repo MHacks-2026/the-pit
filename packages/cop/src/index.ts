@@ -110,3 +110,4 @@ export function detectSpoofing(events: readonly CopEvent[], now: number): AlertC
 
 export * from './explain';
 export * from './extra';
+export * from './marketWatch';

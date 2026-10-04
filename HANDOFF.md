@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Real market] The Cop's eyes on live BTC, Claude Code -> next
+Branch: main
+Done: packages/cop/src/marketWatch.ts (pure, tested): rolling 60 s rates, share cancelled untraded, and "flash orders" (>= 3x median size, <= 50 bp from last trade, gone <= 5 s, never filled). apps/web/lib/bitstamp.ts parses Bitstamp's public live_orders/live_trades feed (tested against real message shapes); useMarketWatch connects the browser directly (no server, no key); new /screen section "The Cop's eyes on live BTC". Verified on 75 s of the real feed: ~87 orders/s, 99.75% cancelled untraded, flash orders found.
+Not done / next: Not seen in a real browser here; check the panel on the next preview. If venue Wi-Fi blocks wss://ws.bitstamp.net the panel says so. Kill switch: NEXT_PUBLIC_MARKET_WATCH=false.
+Gotchas: Coinbase's "full" feed needs authentication now, so Bitstamp is used. No account ids in public feeds, so the spoofing rule cannot run there; the caption says so. apps/web now depends on @the-pit/cop (package.json, lockfile link, transpilePackages).
+How to verify: pnpm test && pnpm build; open /screen
+Files touched: packages/cop/src/{marketWatch,marketWatch.test,index}.ts, apps/web/lib/{bitstamp,bitstamp.test,useMarketWatch}.ts, apps/web/app/screen/{MarketWatchPanel,page}.tsx, apps/web/{package.json,next.config.ts}, pnpm-lock.yaml, docs/LIMITATIONS.md, HANDOFF.md
+
+---
+
 ## [Scaling 2] Pages download only what they render, Claude Code -> next
 Branch: main
 Done: apps/web/lib/subscriptions.ts: open orders, last 10 min of trades (phones) / 30 min (Big Screen), last 2 min of orders for tape colours; cutoff rolls forward every minute. Ticker, TradePanel and MarketBoard use it. Benchmark (apps/runner/src/subscription-bench.ts, docs/LOAD_TEST.md) on 50k-order history: phone page load 151,808 rows / ~38 MB / 641 ms -> 1,208 rows / ~0.3 MB / 8.7 ms. Big Screen stats relabelled "30 min".

@@ -203,6 +203,9 @@ importers:
       '@the-pit/bindings':
         specifier: workspace:*
         version: link:../../packages/bindings
+      '@the-pit/cop':
+        specifier: workspace:*
+        version: link:../../packages/cop
       next:
         specifier: 16.3.8
         version: 16.3.8(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

@@ -1,5 +1,6 @@
 import AlertFeed from './AlertFeed';
 import MarketBoard from './MarketBoard';
+import MarketWatchPanel from './MarketWatchPanel';
 
 import PageHeader from '../PageHeader';
 import Ticker from '../Ticker';
@@ -28,6 +29,16 @@ export default function Screen() {
           <p>Evidence from the live order stream</p>
         </div>
         <AlertFeed />
+      </section>
+      <section className="feed-shell feed-open" aria-labelledby="real-market-heading">
+        <div className="feed-heading">
+          <div>
+            <p className="eyebrow">Real market</p>
+            <h2 id="real-market-heading">The Cop’s eyes on live BTC</h2>
+          </div>
+          <p>Real order flow from Bitstamp’s public feed, right now</p>
+        </div>
+        <MarketWatchPanel />
       </section>
       <footer>Markets are only fair if someone is watching.</footer>
     </main>
