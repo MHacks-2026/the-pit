@@ -135,8 +135,9 @@ export default function DepthXray({ orders, trades, flaggedOrders, flaggedTrades
         const p = raw(c[0], c[1], c[2]);
         minx = Math.min(minx, p[0]); maxx = Math.max(maxx, p[0]); miny = Math.min(miny, p[1]); maxy = Math.max(maxy, p[1]);
       }
-      const m = 16, k = Math.min((W - 2 * m) / (maxx - minx), (H - 2 * m) / (maxy - miny));
-      const ox = W / 2 - k * (minx + maxx) / 2, oy = H / 2 - k * (miny + maxy) / 2;
+      // Room on the right for the "10 s ago" labels, which sit outside the fitted box.
+      const m = 16, padR = 60, k = Math.min((W - 2 * m - padR) / (maxx - minx), (H - 2 * m) / (maxy - miny));
+      const ox = (W - padR) / 2 - k * (minx + maxx) / 2, oy = H / 2 - k * (miny + maxy) / 2;
       const P = (x: number, y: number, z: number) => { const p = raw(x, y, z); return [ox + k * p[0], oy + k * p[1]]; };
       const lo = center - MIDX;
 

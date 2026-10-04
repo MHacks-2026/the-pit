@@ -16,8 +16,8 @@ Files touched: <list>
 ---
 
 ## [T30/T36 3D X-ray] 11:25 CEST, Claude Code -> team
-Branch: feat/3d-xray (local, not pushed)
-Done: Added a Market X-ray card to /screen (new full-width row under price/book/BTC). It is a plain-canvas 3D wireframe of the live HACK book: one row every 400 ms for 30 s, newest in front, drag/arrow keys to rotate, Reset view. Bids/asks use --buy/--sell. Orders named in a HACK spoofing alert's layerOrderIds are hatched in --cop with a "Wall: N units" label, and its oppositeTradeId gets a diamond. Other trades are small dots. No new dependencies, no new colors. 121 tests and the full build pass.
+Branch: main (pushed)
+Done: Added a Market X-ray card to /screen, directly under Market depth (Cop and Tape span both rows beside it; stacked after depth on narrow screens). It is a plain-canvas 3D wireframe of the live HACK book: one row every 400 ms for 30 s, newest in front, drag/arrow keys to rotate, Reset view. Bids/asks use --buy/--sell. Orders named in a HACK spoofing alert's layerOrderIds are hatched in --cop with a "Wall: N units" label, and its oppositeTradeId gets a diamond. Other trades are small dots. No new dependencies, no new colors. 121 tests and the full build pass.
 Not done / next: Check it against the live database during a Beat-the-Cop run. phantomScore (spec section 5) is not used yet. Flags only appear once the alert lands.
 Gotchas: History is client-side and starts empty, so it fills over 30 s after a page load. Headless Chrome screenshots do not run requestAnimationFrame unless driven over CDP.
 How to verify: Open /screen, wait 30 s, then rotate. Run the cheat from /trade and watch the wall hatch after the alert.
