@@ -284,3 +284,35 @@ footer { text-align: center; color: #6f8593; }
 .join-perks { list-style: none; margin: 8px 0 0; padding: 18px 0 0; border-top: 1px solid rgba(255, 255, 255, .08); display: flex; flex-direction: column; gap: 10px; color: #9db3c0; font-size: 15px; }
 .join-perks li { display: flex; align-items: center; gap: 10px; }
 .join-perks li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #54d7c8; flex: none; }
+
+/* marquee + chart */
+.mq { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; height: 38px; border: 1px solid rgba(255, 255, 255, .07); border-radius: 12px; background: rgba(255, 255, 255, .025); overflow: hidden; }
+.mq-mask { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.mq-track { display: flex; width: max-content; animation: mq-scroll 60s linear infinite; }
+.mq-track:hover, .mq-track.mq-paused { animation-play-state: paused; }
+.mq-set { display: flex; flex: none; align-items: center; }
+.mq-item { display: inline-flex; align-items: center; gap: 6px; padding: 0 22px; font-size: 14px; color: #8ea5b3; white-space: nowrap; position: relative; }
+.mq-item::after { content: ''; position: absolute; right: -2px; top: 50%; width: 3px; height: 3px; margin-top: -1.5px; border-radius: 50%; background: rgba(255, 255, 255, .22); }
+.mq-value { color: #f2f7f9; font-weight: 650; font-variant-numeric: tabular-nums; }
+.mq-price .mq-label { color: #54d7c8; font-weight: 700; }
+.mq-buy .mq-value { color: #4cc9a0; }
+.mq-sell .mq-value { color: #ee7d66; }
+.mq-cop .mq-label { color: #e9b44c; font-weight: 600; }
+.mq-cop .mq-value { color: #f0c466; }
+.mq-news .mq-label { color: #54d7c8; font-weight: 600; }
+.mq-cta .mq-value { color: #54d7c8; }
+.mq-btn { flex: none; width: 28px; height: 28px; margin-right: 8px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .06); color: #8ea5b3; font-size: 10px; cursor: pointer; }
+.mq-btn:hover { background: rgba(255, 255, 255, .12); color: #f2f7f9; }
+@keyframes mq-scroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .mq-track { animation: none; } .mq-mask { overflow-x: auto; } }
+
+.pc-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(255, 255, 255, .05); }
+.pc-tabs button { border: 0; border-radius: 7px; padding: 5px 12px; background: transparent; color: #8ea5b3; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pc-tabs button.on { background: rgba(84, 215, 200, .16); color: #54d7c8; }
+.pchart-live { touch-action: pan-y; cursor: crosshair; }
+.pchart-live .pc-line { stroke-width: 1.8; }
+.pc-cross { stroke: rgba(242, 247, 249, .35); stroke-width: 1; stroke-dasharray: 3 3; }
+.pc-hdot { fill: #071018; stroke: #54d7c8; stroke-width: 2; }
+.pc-tip { fill: #0f2230; stroke: rgba(255, 255, 255, .12); }
+.pc-tipprice { fill: #f2f7f9; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pc-tiptime { fill: #8ea5b3; font-size: 11px; }
