@@ -23,6 +23,8 @@
 
 - **The real-market panel shows signals, not suspects.** `/screen` streams Bitstamp's public BTC/USD order feed (Coinbase's equivalent feed now requires authentication) through the Cop's `marketWatch`: order, cancel and trade rates, the share cancelled without trading, and "flash orders" (at least 3x the median size, within 50 bp of the last trade, gone within 5 s, never filled). Public feeds carry order ids but no account ids, so the spoofing rule itself cannot run there, and most flash orders are ordinary market makers re-quoting. In a 60 s sample (2026-10-04): 87 orders/s, 99.75% cancelled without trading, 0.2 trades/s.
 
+- **On real-data markets the results hold, including the limits.** On 171 held-out real price paths with every bot trading, the Cop caught the default spoofer in 171/171 sessions with 0 false alarms (market maker and adaptive AI included), and missed both evasive variants in 171/171. In those sessions the spoofer still made money on average (+67) and the adaptive AI lost most when it was present, so catching spoofing matters even when it is detected after the fact. See `docs/REAL_DATA_EVAL.md`.
+
 ## One-line answer for judges
 
 "Our spoofer was tuned to the Cop's rule, so the table shows they agree, not that the Cop generalises. If the spoofer waits 4 seconds before trading, or 6 seconds before cancelling, the Cop misses it every time. It's a transparent rule-based detector on simulated play-money data, not a production surveillance system."

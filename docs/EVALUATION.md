@@ -14,3 +14,5 @@ Recall: 100.0% (100/100 spoofer sessions flagged). Precision: 100.0% (278/278 al
 The Market Maker is the negative control. It makes real fills and cancels often, and is never flagged.
 
 Limitations: the manipulator is simulated and its parameters were designed against the same rule the Cop implements, so these numbers are an upper bound that checks the implementation, not real-world detection. Sessions are 60 s long. Play money only.
+
+Real-data check: the same Cop on 171 held-out real crypto price paths (all bots, including the trained adaptive AI) caught the spoofer in 171/171 sessions with 0 false alarms; the evasive variants still get through (0/171). Details and a bot leaderboard: [REAL_DATA_EVAL.md](REAL_DATA_EVAL.md).

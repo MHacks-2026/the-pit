@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Real-data eval] Tournament + Cop on real price paths, Claude Code -> next
+Branch: main
+Done: packages/bots/src/realDataEval.test.ts (PIT_EVAL_REAL=1, ~25 s) runs all bots + trained AI on the 171 held-out real paths, with/without the spoofer and both evasive variants, and writes docs/REAL_DATA_EVAL.md. Cop: 171/171 caught, 0 false alarms (MM and AI included); evasive 0/171. Leaderboard (no spoofer): MM +102, noise +8..+16, AI -52, informed -88. With spoofer: spoofer +67, AI -124.
+Not done / next: Live real-data mode for the runner (replay paths as the live hidden value) is not built; roadmap item.
+Gotchas: AI profit varies with seeds (-30 in ADAPTIVE_EVAL vs -52 here on the same paths).
+How to verify: PIT_EVAL_REAL=1 pnpm exec vitest run packages/bots/src/realDataEval.test.ts (check mode)
+Files touched: packages/bots/src/realDataEval.test.ts, docs/{REAL_DATA_EVAL,EVALUATION,LIMITATIONS}.md, HANDOFF.md
+
+---
+
 ## [Real market] The Cop's eyes on live BTC, Claude Code -> next
 Branch: main
 Done: packages/cop/src/marketWatch.ts (pure, tested): rolling 60 s rates, share cancelled untraded, and "flash orders" (>= 3x median size, <= 50 bp from last trade, gone <= 5 s, never filled). apps/web/lib/bitstamp.ts parses Bitstamp's public live_orders/live_trades feed (tested against real message shapes); useMarketWatch connects the browser directly (no server, no key); new /screen section "The Cop's eyes on live BTC". Verified on 75 s of the real feed: ~87 orders/s, 99.75% cancelled untraded, flash orders found.
