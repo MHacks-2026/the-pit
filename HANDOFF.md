@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Cop scroll regions] 16:39 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Replaced evidence list overflow with an explicit keyboard-focusable scroll region capped at 410px/55vh. Added a separate recent-case scroll region capped at 280px and raised its display limit from five to ten cases. Raised the source window from 24 to 100 alerts so repeated findings from one account do not crowd every other recent case out.
+Not done / next: Shafir checks wheel, trackpad, touch and keyboard scrolling in local Edge. Do not merge to main until approved.
+Gotchas: Recent rows are alert cases, so a trader can appear more than once if incidents are separate. Nothing changes in detection or stored alerts.
+How to verify: Refresh `http://localhost:3000/screen`, expand View evidence for a case with several findings, scroll inside it, then scroll and select an older Recent case.
+Files touched: apps/web/app/screen/AlertFeed.tsx, apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
 ## [UI QR unboxed] 16:36 CEST, Codex -> team
 Branch: ui/terminal-layout-preview (local review; main unchanged)
 Done: Removed the thin card border, background and padding from the QR/join group in both preview and production header styles. Kept the enlarged QR, join link and added space above the ticker. Local `/screen` responds.

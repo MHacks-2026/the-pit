@@ -67,7 +67,7 @@ function FeedContent() {
   const [accounts] = useTable(tables.account);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const names = new Map(accounts.map(account => [account.identity.toHexString(), account.name]));
-  const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 24);
+  const latest = [...alerts].sort((a, b) => Number(b.ts.microsSinceUnixEpoch - a.ts.microsSinceUnixEpoch)).slice(0, 100);
   const cases = groupAlertCases(latest.map(alert => ({ id: alert.id.toString(),
     owner: alert.owner.toHexString(), kind: alert.kind,
     at: Number(alert.ts.microsSinceUnixEpoch / 1000n), alert: alert as AlertRow })));
@@ -90,30 +90,34 @@ function FeedContent() {
         <p className="cop-count">{selected.entries.length} finding{selected.entries.length === 1 ? '' : 's'} shown · Pattern match, not proof of intent</p>
         <details className="cop-evidence">
           <summary>View evidence</summary>
-          <ol tabIndex={0} aria-label="Finding evidence">
-            {selected.entries.map(({ alert }) => <li key={alert.id.toString()}>
-              <div className="cop-finding-head"><strong>Finding #{alert.id.toString()}</strong>
-                <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
-                  {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}</time></div>
-              <p>{sequence(alert.evidence)}</p>
-              <EvidenceFacts raw={alert.evidence} />
-            </li>)}
-          </ol>
+          <div className="cop-evidence-scroll" role="region" aria-label="Finding evidence" tabIndex={0}>
+            <ol>
+              {selected.entries.map(({ alert }) => <li key={alert.id.toString()}>
+                <div className="cop-finding-head"><strong>Finding #{alert.id.toString()}</strong>
+                  <time dateTime={new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toISOString()}>
+                    {new Date(Number(alert.ts.microsSinceUnixEpoch / 1000n)).toLocaleTimeString()}</time></div>
+                <p>{sequence(alert.evidence)}</p>
+                <EvidenceFacts raw={alert.evidence} />
+              </li>)}
+            </ol>
+          </div>
         </details>
       </article>
       <aside className="cop-recent" aria-label="Recent alert cases">
         <div className="cop-recent-head"><h3>Recent</h3>
           {selected !== cases[0] && <button type="button" onClick={() => setSelectedId(null)}>Latest</button>}</div>
-        <ol>
-          {cases.slice(0, 5).map(item => {
-            const name = names.get(item.owner) || `Trader ${item.owner.slice(0, 8)}`;
-            return <li key={item.entries[0].id}><button type="button"
-              aria-pressed={selected === item} onClick={() => setSelectedId(item.entries[0].id)}>
-              <span><strong>{name}</strong><small>{item.kind.replaceAll('_', ' ')} · {item.entries.length} finding{item.entries.length === 1 ? '' : 's'}</small></span>
-              <time dateTime={new Date(item.latestAt).toISOString()}>{new Date(item.latestAt).toLocaleTimeString()}</time>
-            </button></li>;
-          })}
-        </ol>
+        <div className="cop-recent-scroll" role="region" aria-label="Recent alert accounts" tabIndex={0}>
+          <ol>
+            {cases.slice(0, 10).map(item => {
+              const name = names.get(item.owner) || `Trader ${item.owner.slice(0, 8)}`;
+              return <li key={item.entries[0].id}><button type="button"
+                aria-pressed={selected === item} onClick={() => setSelectedId(item.entries[0].id)}>
+                <span><strong>{name}</strong><small>{item.kind.replaceAll('_', ' ')} · {item.entries.length} finding{item.entries.length === 1 ? '' : 's'}</small></span>
+                <time dateTime={new Date(item.latestAt).toISOString()}>{new Date(item.latestAt).toLocaleTimeString()}</time>
+              </button></li>;
+            })}
+          </ol>
+        </div>
       </aside>
     </div>
     <RecordSeal />

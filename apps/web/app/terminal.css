@@ -182,7 +182,8 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
 .terminal-dashboard .cop-recent li button { padding: 8px 4px; }
 .terminal-dashboard .cop-recent li button[aria-pressed="true"] { background: #183038; }
 .terminal-dashboard .cop-seal { margin-top: 12px; }
-.terminal-dashboard .cop-evidence[open] ol { max-height: min(410px, 55vh); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-color: #6c593e transparent; padding-right: 12px; border-bottom: 1px solid var(--line); }
+.terminal-dashboard .cop-evidence-scroll { display: block; max-height: min(410px, 55vh); min-height: 0; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; scrollbar-width: thin; scrollbar-gutter: stable; scrollbar-color: #6c593e transparent; padding-right: 10px; border-bottom: 1px solid var(--line); }
+.terminal-dashboard .cop-recent-scroll { display: block; max-height: 280px; min-height: 0; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; scrollbar-width: thin; scrollbar-gutter: stable; scrollbar-color: #40515c transparent; padding-right: 6px; border-bottom: 1px solid var(--line); }
 .terminal-dashboard .terminal-btc .board-card { padding: 0; border: 0; }
 .terminal-dashboard .terminal-btc .board-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .terminal-dashboard .terminal-btc .board-mini div { border-bottom: 1px solid var(--line); }
