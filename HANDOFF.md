@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Scaling 2] Pages download only what they render, Claude Code -> next
+Branch: main
+Done: apps/web/lib/subscriptions.ts: open orders, last 10 min of trades (phones) / 30 min (Big Screen), last 2 min of orders for tape colours; cutoff rolls forward every minute. Ticker, TradePanel and MarketBoard use it. Benchmark (apps/runner/src/subscription-bench.ts, docs/LOAD_TEST.md) on 50k-order history: phone page load 151,808 rows / ~38 MB / 641 ms -> 1,208 rows / ~0.3 MB / 8.7 ms. Big Screen stats relabelled "30 min".
+Not done / next: Not checked in a real browser (no browser here): during the multi-device test, confirm book, tape colours, chart and leaderboard render, and watch for a brief flicker when the cutoff rolls each minute. If it flickers, stop rolling the trade cutoff. Ticker still opens its own connection; sharing one connection per page would halve connections.
+Gotchas: Web-only change: goes live with a normal Vercel deploy, no database publish needed. Leaderboard, alerts and news still use full tables (they grow with players, not trades).
+How to verify: pnpm test && pnpm build; open /trade and /screen against a database with history.
+Files touched: apps/web/lib/subscriptions.ts, apps/web/app/{Ticker.tsx,trade/TradePanel.tsx,screen/MarketBoard.tsx}, apps/runner/src/subscription-bench.ts, docs/LOAD_TEST.md, HANDOFF.md
+
+---
+
 ## [Scaling] place_order no longer slows down with history, Claude Code -> next
 Branch: main
 Done: Module reads only open orders (btree index on order.status), only the caller's and resting-order owners' accounts/positions, and keeps the last trade price in a private market_state table. Benchmark (apps/runner/src/history-bench.ts, docs/LOAD_TEST.md): p50 at 50k historical orders 15.3 ms -> 1.3 ms; flat to 100k. In-place upgrade over a 50k-order database tested (no data loss); audit passed; all three live acceptance tests passed locally.

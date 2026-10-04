@@ -6,6 +6,7 @@ import { DbConnection, tables } from '@the-pit/bindings';
 import { COP_PENALTY } from '../../lib/copScore';
 import DepthChart from './DepthChart';
 import PriceChart from './PriceChart';
+import { SCREEN_TRADES_WINDOW_MS, useOpenAndRecentOrders, useRecentTrades } from '../../lib/subscriptions';
 
 const HACK_MARKET_ID = 1;
 const START_CASH = 10_000;
@@ -29,8 +30,9 @@ function signed(n: number): string {
 
 function Board() {
   const { connectionError } = useSpacetimeDB();
-  const [orders, ordersReady] = useTable(tables.order);
-  const [trades] = useTable(tables.trade);
+  // Filtered: open + recent orders and the last 30 minutes of trades, not the whole history.
+  const [orders, ordersReady] = useOpenAndRecentOrders();
+  const [trades] = useRecentTrades(SCREEN_TRADES_WINDOW_MS);
   const [accounts] = useTable(tables.account);
   const [positions] = useTable(tables.position);
   const [alerts] = useTable(tables.alert);
@@ -145,8 +147,8 @@ function Board() {
       ) : null}
 
       <dl className="board-stats">
-        <div><dt>Volume</dt><dd>{fmt(view.volume)}</dd></div>
-        <div><dt>Trades</dt><dd>{fmt(view.tradeCount)}</dd></div>
+        <div><dt>Volume (30 min)</dt><dd>{fmt(view.volume)}</dd></div>
+        <div><dt>Trades (30 min)</dt><dd>{fmt(view.tradeCount)}</dd></div>
         <div><dt>Traders</dt><dd>{view.humans}<small> + {view.bots} bots</small></dd></div>
         <div><dt>Open orders</dt><dd>{fmt(view.openOrders)}</dd></div>
         <div><dt>Cop alerts</dt><dd className={view.alertCount > 0 ? 'stat-amber' : undefined}>{fmt(view.alertCount)}</dd></div>
@@ -168,7 +170,7 @@ function Board() {
           <div><dt>High</dt><dd>{view.high ?? '—'}</dd></div>
           <div><dt>Low</dt><dd>{view.low ?? '—'}</dd></div>
           <div>
-            <dt>Session</dt>
+            <dt>30 min</dt>
             <dd className={view.sessionChange === null ? undefined : view.sessionChange >= 0 ? 'rank-up' : 'rank-down'}>
               {view.sessionChange === null ? '—' : `${signed(view.sessionChange)}${view.sessionPct !== null ? ` (${view.sessionPct >= 0 ? '+' : '−'}${Math.abs(view.sessionPct).toFixed(1)}%)` : ''}`}
             </dd>

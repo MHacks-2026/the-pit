@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { reducers, tables } from '@the-pit/bindings';
 import { HACK_MARKET_ID, LiveProvider } from '../../lib/live';
+import { PHONE_TRADES_WINDOW_MS, useOpenOrders, useRecentTrades } from '../../lib/subscriptions';
 import BeatTheCop from './BeatTheCop';
 import CitationCard from './CitationCard';
 
@@ -16,8 +17,9 @@ function TradeInner() {
   const { identity, connectionError } = useSpacetimeDB();
   const [accounts, accountsReady] = useTable(tables.account);
   const [positions] = useTable(tables.position);
-  const [orders] = useTable(tables.order);
-  const [trades, tradesReady] = useTable(tables.trade);
+  // Filtered: the phone needs open orders and the last price, not the whole history.
+  const [orders] = useOpenOrders();
+  const [trades, tradesReady] = useRecentTrades(PHONE_TRADES_WINDOW_MS);
   const placeOrder = useReducer(reducers.placeOrder);
   const cancelOrder = useReducer(reducers.cancelOrder);
 

@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { SpacetimeDBProvider, useTable } from 'spacetimedb/react';
 import { DbConnection, tables } from '@the-pit/bindings';
 import Marquee, { type MarqueeItem } from './screen/Marquee';
+import { PHONE_TRADES_WINDOW_MS, useOpenAndRecentOrders, useRecentTrades } from '../lib/subscriptions';
 
 const HACK_MARKET_ID = 1;
 const START_CASH = 10_000;
@@ -16,8 +17,9 @@ function signed(n: number): string {
 }
 
 function TickerInner() {
-  const [orders] = useTable(tables.order);
-  const [trades] = useTable(tables.trade);
+  // Filtered: open + recent orders and recent trades, not the whole history (this ticker runs on phones too).
+  const [orders] = useOpenAndRecentOrders();
+  const [trades] = useRecentTrades(PHONE_TRADES_WINDOW_MS);
   const [accounts] = useTable(tables.account);
   const [positions] = useTable(tables.position);
   const [alerts] = useTable(tables.alert);

@@ -46,3 +46,28 @@ with the runner and the adaptive bot connected), followed by a passing audit.
 token from `POST /v1/identity`, `spacetime --config-path=<tmp>/cli.toml login --token <token>`, publish to a `pit-bench-*`
 database, then from `apps/runner`:
 `PIT_BENCH_URI=ws://127.0.0.1:3123 PIT_BENCH_DB=pit-bench-<id> node --import tsx src/history-bench.ts`.
+
+## Subscription benchmark: what a phone downloads on page load (2026-10-04)
+
+**Question:** how much data does a page pull before it can render? Before this change every page subscribed to the full
+`order` and `trade` tables, and the `Ticker` (shown on `/join`, `/trade` and `/screen`) opens its own connection, so a phone
+downloaded the whole order and trade history twice. Now pages subscribe through `apps/web/lib/subscriptions.ts`: open
+orders, the last 10 minutes of trades on phones (30 on the Big Screen), and the last 2 minutes of orders (only so tape rows
+can show the taker's side). The cutoff rolls forward every minute, so a page left open stays bounded too.
+
+**Method:** `apps/runner/src/subscription-bench.ts` on a disposable local SpacetimeDB 2.10.2 server. 50,000 orders of
+history (50,600 orders and 25,300 trades), then a cutoff, then a deliberately generous "recent" burst of 600 orders and 300
+trades (more than the live bots produce in 10 minutes). For each page it opens the same connections with the same query
+objects the React hooks use, and measures rows received and time from subscribe to applied (median of 5).
+
+| Page load | Before: rows / data / time | After: rows / data / time |
+|---|---|---|
+| Phone `/trade` (2 connections) | 151,808 / ~38 MB / 641 ms | **1,208 / ~0.3 MB / 8.7 ms** |
+| Big Screen `/screen` (3 connections) | 151,810 / ~38 MB / 658 ms | **1,810 / ~0.5 MB / 11.4 ms** |
+
+Data size is the rows measured as JSON; the wire format is a more compact binary, so absolute sizes are smaller but the
+ratio holds. Times are on localhost; over a phone network the difference is far larger. After the change, what a page
+downloads depends on recent activity, not on how long the market has run.
+
+Visible change: the Big Screen's High, Low, Volume, Trades and change figures now cover the last 30 minutes (labelled
+"30 min") instead of all history.
