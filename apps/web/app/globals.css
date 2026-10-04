@@ -480,3 +480,19 @@ h1 { letter-spacing: -.04em; }
 .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 90% 80% at 50% 40%, transparent 35%, rgba(0, 0, 0, .65) 100%); }
 @media (prefers-reduced-motion: reduce) { .bokeh, .spark { animation: none; } .spark { opacity: .35; } }
 @media (max-width: 680px) { .halftone { display: none; } }
+
+/* buy / sell: small, flat, classic */
+.trade-actions { gap: 10px; }
+.trade-button { flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; height: 56px; padding: 0 22px; border-radius: 14px; font-size: 18px; font-weight: 700; letter-spacing: -.01em; box-shadow: none; filter: none; transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease; }
+.trade-button::after { display: none; }
+.trade-buy { background: rgba(48, 209, 88, .12); border: 1px solid rgba(48, 209, 88, .5); color: #4be07a; box-shadow: none; }
+.trade-sell { background: rgba(255, 69, 58, .12); border: 1px solid rgba(255, 69, 58, .5); color: #ff6a61; box-shadow: none; }
+.trade-buy:not(:disabled):hover { background: #30d158; color: #04200c; filter: none; transform: none; }
+.trade-sell:not(:disabled):hover { background: #ff453a; color: #fff; filter: none; transform: none; }
+.trade-button:not(:disabled):active { transform: scale(.98); filter: none; }
+.trade-button:disabled { opacity: .45; box-shadow: none; }
+.tb-sub { font-size: 14px; font-weight: 600; opacity: .75; }
+
+/* arrow on buy / sell */
+.tb-label { display: inline-flex; align-items: center; gap: 10px; }
+.tb-arrow { flex: none; }

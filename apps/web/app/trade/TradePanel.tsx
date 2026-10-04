@@ -142,8 +142,8 @@ function TradeInner() {
       <p className="join-hint">Order value: {(price * qty).toLocaleString('en-US')} play dollars</p>
 
       <div className="trade-actions">
-        <button className="trade-button trade-buy" type="button" disabled={busy} onClick={() => submit('buy')}><span>Buy</span><span className="tb-sub">{qty} @ {price}</span></button>
-        <button className="trade-button trade-sell" type="button" disabled={busy} onClick={() => submit('sell')}><span>Sell</span><span className="tb-sub">{qty} @ {price}</span></button>
+        <button className="trade-button trade-buy" type="button" disabled={busy} onClick={() => submit('buy')}><span className="tb-label"><svg className="tb-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2.5 12.5 11.5H1.5Z" fill="currentColor" /></svg>Buy</span><span className="tb-sub">{qty} @ {price}</span></button>
+        <button className="trade-button trade-sell" type="button" disabled={busy} onClick={() => submit('sell')}><span className="tb-label"><svg className="tb-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 11.5 1.5 2.5H12.5Z" fill="currentColor" /></svg>Sell</span><span className="tb-sub">{qty} @ {price}</span></button>
       </div>
 
       {error ? <p className="join-error" role="alert">{error}</p> : null}
