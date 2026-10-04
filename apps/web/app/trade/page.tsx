@@ -5,9 +5,9 @@ export default function Trade() {
     <main className="screen">
       <header className="screen-header">
         <div>
-          <p className="eyebrow">MHacks 2026 · play money only</p>
+          <p className="eyebrow">MHacks 2026 · Play money only</p>
           <h1>THE PIT</h1>
-          <p className="subtitle">Buy or sell HACK against the living exchange.</p>
+          <p className="subtitle">Buy or sell HACK on the live exchange.</p>
         </div>
         <div className="live-pill"><span className="live-dot" /> Live</div>
       </header>
@@ -17,7 +17,7 @@ export default function Trade() {
             <p className="eyebrow">Trader desk</p>
             <h2 id="trade-heading">Trade HACK</h2>
           </div>
-          <p>Prices are whole ticks. Quantities are whole units.</p>
+          <p>Prices and quantities are whole numbers.</p>
         </div>
         <TradePanel />
       </section>

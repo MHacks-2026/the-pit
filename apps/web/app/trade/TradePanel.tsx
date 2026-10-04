@@ -6,7 +6,7 @@ import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { reducers, tables } from '@the-pit/bindings';
 import { HACK_MARKET_ID, LiveProvider } from '../../lib/live';
 import BeatTheCop from './BeatTheCop';
-import CheatButton from './CheatButton';
+import CitationCard from './CitationCard';
 
 const MAX_ORDER_QTY = 50;
 
@@ -80,16 +80,16 @@ function TradeInner() {
     setMessage(null);
     try {
       await cancelOrder({ orderId });
-      setMessage('Order cancelled');
+      setMessage('Order canceled');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not cancel');
+      setError(err instanceof Error ? err.message : 'Couldn’t cancel the order');
     }
   }
 
   const mid = view.bestBid !== null && view.bestAsk !== null ? (view.bestBid + view.bestAsk) / 2 : (view.lastPrice ?? 100);
 
   if (connectionError) {
-    return <p className="join-error" role="alert">Could not reach the exchange. Check your connection and refresh.</p>;
+    return <p className="join-error" role="alert">Couldn’t reach the exchange. Check your connection and refresh.</p>;
   }
   if (!identity || !accountsReady) {
     return <p className="feed-state" role="status">Loading your trader desk…</p>;
@@ -97,8 +97,8 @@ function TradeInner() {
   if (!view.me) {
     return (
       <div className="join-success">
-        <p className="join-status" role="status">You have not joined yet.</p>
-        <Link className="join-button" href="/join">Join the pit</Link>
+        <p className="join-status" role="status">You haven’t joined yet.</p>
+        <Link className="join-button" href="/join">Join the Pit</Link>
       </div>
     );
   }
@@ -151,7 +151,7 @@ function TradeInner() {
 
       <h3 className="trade-orders-title">Open orders</h3>
       {view.mine.length === 0 ? (
-        <p className="join-hint">No open orders. Orders that do not match right away wait here.</p>
+        <p className="join-hint">No open orders. Orders that don’t match right away wait here.</p>
       ) : (
         <ul className="trade-orders">
           {view.mine.map(order => (
@@ -164,9 +164,9 @@ function TradeInner() {
         </ul>
       )}
 
-      <CheatButton lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
+      <BeatTheCop myHex={myHex ?? ''} cash={Number(view.me.cash)} position={view.position} mid={mid} lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
 
-      <BeatTheCop myHex={myHex ?? ''} cash={Number(view.me.cash)} position={view.position} mid={mid} />
+      <CitationCard myHex={myHex ?? ''} name={view.me.name} />
     </div>
   );
 }

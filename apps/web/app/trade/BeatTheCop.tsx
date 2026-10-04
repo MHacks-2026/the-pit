@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTable } from 'spacetimedb/react';
 import { tables } from '@the-pit/bindings';
 import { COP_PENALTY } from '../../lib/copScore';
+import CheatButton from './CheatButton';
 
 const CHALLENGE_SECONDS = 60;
 
@@ -18,7 +19,7 @@ function signed(n: number): string {
   return `${n >= 0 ? '+' : ''}${Math.round(n).toLocaleString('en-US')}`;
 }
 
-export default function BeatTheCop({ myHex, cash, position, mid }: { myHex: string; cash: number; position: number; mid: number }) {
+export default function BeatTheCop({ myHex, cash, position, mid, lastPrice, bestAsk }: { myHex: string; cash: number; position: number; mid: number; lastPrice: number | null; bestAsk: number | null }) {
   const [alerts] = useTable(tables.alert);
   const myAlerts = alerts.filter(a => a.owner.toHexString() === myHex).length;
   const net = cash + position * mid;
@@ -67,11 +68,13 @@ export default function BeatTheCop({ myHex, cash, position, mid }: { myHex: stri
     <div className="cop-box">
       <h3 className="trade-orders-title">Beat the Cop</h3>
       <p className="join-hint">
-        You have {CHALLENGE_SECONDS} seconds. Make money any way you like, but every Market Cop alert against you costs {COP_PENALTY} points.
+        You have {CHALLENGE_SECONDS} seconds. Make money any way you like, even by cheating, but every Market Cop alert against you costs {COP_PENALTY} points.
       </p>
       <button className="cop-button" type="button" disabled={run !== null} onClick={start}>
         {run ? `${left}s left` : result ? 'Play again' : 'Start the challenge'}
       </button>
+
+      <CheatButton lastPrice={lastPrice} bestAsk={bestAsk} enabled={run !== null} />
 
       {live ? (
         <dl className="cop-stats" aria-live="polite">

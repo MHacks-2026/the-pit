@@ -47,12 +47,12 @@ export default function DepthChart({ bids, asks }: { bids: Level[]; asks: Level[
     <svg className="dchart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Depth chart: total buy and sell size at each price">
       <defs>
         <linearGradient id="bidFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#4cc9a0" stopOpacity=".42" />
-          <stop offset="1" stopColor="#4cc9a0" stopOpacity=".03" />
+          <stop offset="0" stopColor="#30d158" stopOpacity=".42" />
+          <stop offset="1" stopColor="#30d158" stopOpacity=".03" />
         </linearGradient>
         <linearGradient id="askFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ee7d66" stopOpacity=".42" />
-          <stop offset="1" stopColor="#ee7d66" stopOpacity=".03" />
+          <stop offset="0" stopColor="#ff453a" stopOpacity=".42" />
+          <stop offset="1" stopColor="#ff453a" stopOpacity=".03" />
         </linearGradient>
       </defs>
       <line className="pc-grid" x1={0} x2={W} y1={y(0)} y2={y(0)} />

@@ -5,9 +5,9 @@ export default function Join() {
     <main className="screen">
       <header className="screen-header">
         <div>
-          <p className="eyebrow">MHacks 2026 · play money only</p>
+          <p className="eyebrow">MHacks 2026 · Play money only</p>
           <h1>THE PIT</h1>
-          <p className="subtitle">Enter a name and join the living exchange.</p>
+          <p className="subtitle">Pick a name and join the live exchange.</p>
         </div>
         <div className="live-pill"><span className="live-dot" /> Live</div>
       </header>
@@ -15,9 +15,9 @@ export default function Join() {
         <div className="feed-heading">
           <div>
             <p className="eyebrow">Trader desk</p>
-            <h2 id="join-heading">Join the pit</h2>
+            <h2 id="join-heading">Join the Pit</h2>
           </div>
-          <p>Starting cash: 10,000 play dollars</p>
+          <p>Starting cash: 10,000 play dollars.</p>
         </div>
         <JoinForm />
       </section>
