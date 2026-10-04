@@ -5,7 +5,6 @@ import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react
 import { DbConnection, tables } from '@the-pit/bindings';
 import { COP_PENALTY } from '../../lib/copScore';
 import DepthChart from './DepthChart';
-import Marquee, { type MarqueeItem } from './Marquee';
 import PriceChart from './PriceChart';
 
 const HACK_MARKET_ID = 1;
@@ -114,30 +113,6 @@ function Board() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
 
-    const recentAlerts = [...alerts]
-      .sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))
-      .slice(0, 3);
-    const marquee: MarqueeItem[] = [];
-    if (lastPrice !== null) {
-      const move = prevPrice !== null && prevPrice !== lastPrice ? ` ${lastPrice > prevPrice ? '▲' : '▼'}${Math.abs(lastPrice - prevPrice)}` : '';
-      marquee.push({ id: 'px', kind: 'price', label: 'HACK', value: `${lastPrice}${move}` });
-    }
-    for (const t of tape.slice(0, 4)) {
-      if (!t.side) continue;
-      marquee.push({ id: `t${t.id}`, kind: t.side === 'sell' ? 'sell' : 'buy', label: `${t.who} ${t.side === 'buy' ? 'bought' : 'sold'} ${t.qty} @`, value: String(t.price) });
-    }
-    for (const al of recentAlerts) {
-      marquee.push({ id: `a${al.id}`, kind: 'cop', label: `Cop alert · ${al.kind.charAt(0).toUpperCase()}${al.kind.slice(1).replaceAll('_', ' ')} on ${nameByKey.get(al.owner.toHexString()) ?? 'a trader'} ·`, value: `${al.score}/100` });
-    }
-    if (news.length) {
-      const n = [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0];
-      marquee.push({ id: 'news', kind: 'news', label: 'News ·', value: n.text });
-    }
-    if (leaderboard.length) {
-      marquee.push({ id: 'lead', kind: 'leader', label: `Leader · ${leaderboard[0].name}`, value: signed(leaderboard[0].net - START_CASH) });
-    }
-    marquee.push({ id: 'cta', kind: 'cta', label: 'Scan to trade ·', value: 'the-pit-seven.vercel.app/join' });
-
     const humans = accounts.filter(a => !a.isBot).length;
     const latestNews = news.length
       ? [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0]
@@ -149,7 +124,6 @@ function Board() {
       tape, chart, leaderboard, copBoard,
       humans, bots: accounts.length - humans, openOrders: open.length, alertCount: alerts.length,
       newsText: latestNews ? latestNews.text : null,
-      marquee,
     };
   }, [orders, trades, accounts, positions, alerts, news]);
 
@@ -166,8 +140,6 @@ function Board() {
 
   return (
     <div className="board-grid">
-      <Marquee items={view.marquee} />
-
       {view.newsText ? (
         <p className="news-strip"><b>News</b>{view.newsText}</p>
       ) : null}

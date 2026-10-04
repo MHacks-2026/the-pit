@@ -496,3 +496,13 @@ h1 { letter-spacing: -.04em; }
 /* arrow on buy / sell */
 .tb-label { display: inline-flex; align-items: center; gap: 10px; }
 .tb-arrow { flex: none; }
+
+/* shared header: ticker sits close under it, badge stays compact on phones */
+.screen-header + .mq { margin-top: -16px; }
+@media (max-width: 680px) {
+  .qr-badge { gap: 14px; padding: 10px 18px 10px 10px; }
+  .qr-badge-code { padding: 6px; border-radius: 12px; }
+  .qr-badge-code img { width: 84px; height: 84px; }
+  .qr-badge-copy b { font-size: 17px; }
+  .qr-badge-copy small { display: none; }
+}

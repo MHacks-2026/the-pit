@@ -1,16 +1,13 @@
 import JoinForm from './JoinForm';
 
+import PageHeader from '../PageHeader';
+import Ticker from '../Ticker';
+
 export default function Join() {
   return (
     <main className="screen">
-      <header className="screen-header">
-        <div>
-          <p className="eyebrow">MHacks 2026 · Play money only</p>
-          <h1>THE PIT</h1>
-          <p className="subtitle">Pick a name and join the live exchange.</p>
-        </div>
-        <div className="live-pill"><span className="live-dot" /> Live</div>
-      </header>
+      <PageHeader subtitle="Pick a name and join the live exchange." />
+      <Ticker />
       <section className="feed-shell" aria-labelledby="join-heading">
         <div className="feed-heading">
           <div>
