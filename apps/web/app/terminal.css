@@ -43,7 +43,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .live-dot { width: 6px; height: 6px; background: var(--accent); box-shadow: none; }
 .brand .subtitle { order: 2; margin: 0; color: var(--muted); font-size: 12px; }
 .head-right { gap: 0; align-items: flex-end; }
-.qr-badge { gap: 16px; padding: 8px 18px 8px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); box-shadow: none; }
+.qr-badge { gap: 16px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .qr-badge-code { padding: 3px; border-radius: 2px; box-shadow: none; animation: none; }
 .qr-badge-code img { width: 96px; height: 96px; }
 .qr-badge-copy { gap: 2px; }
@@ -51,7 +51,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .qr-badge-copy span, .qr-badge-copy small { font-size: 10px; color: var(--muted); }
 .preview-join-link { color: var(--accent); font-size: 13px; font-weight: 650; text-decoration: none; white-space: nowrap; }
 .preview-join-link:hover { text-decoration: underline; }
-.preview-join { display: flex; align-items: center; gap: 20px; padding: 8px 18px 8px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.preview-join { display: flex; align-items: center; gap: 20px; }
 .preview-qr-image, .preview-qr-placeholder { display: block; width: 96px; height: 96px; padding: 4px; background: #fff; border-radius: 3px; image-rendering: pixelated; }
 .mq {
   height: 32px;

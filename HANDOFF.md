@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI QR unboxed] 16:36 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (local review; main unchanged)
+Done: Removed the thin card border, background and padding from the QR/join group in both preview and production header styles. Kept the enlarged QR, join link and added space above the ticker. Local `/screen` responds.
+Not done / next: Shafir reviews in Edge; do not merge to main until approved.
+Gotchas: This is a CSS-only correction after the previous passing test/build gate.
+How to verify: Refresh `http://localhost:3000/screen`.
+Files touched: apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
 ## [UI terminal sizing] 16:34 CEST, Codex -> team
 Branch: ui/terminal-layout-preview (local review; main unchanged)
 Done: Enlarged the fixed BTC flash-order viewport from 180 to 270px. Capped expanded Cop evidence at 410px/55vh with a keyboard-focusable scroll list, so many findings cannot stretch the screen. Gave Buy/Sell solid dark green/red fills, with visible disabled states. Boxed the QR/join control with a thin rounded border, increased space above the ticker, and enlarged/raised THE PIT wordmark. All 121 active tests and the full build pass.
