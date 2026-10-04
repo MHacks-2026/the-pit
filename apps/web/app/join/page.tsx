@@ -5,7 +5,7 @@ import Ticker from '../Ticker';
 
 export default function Join() {
   return (
-    <main className="screen">
+    <main className="screen terminal-join-page">
       <PageHeader subtitle="Pick a name and join the live exchange." />
       <Ticker />
       <section className="feed-shell" aria-labelledby="join-heading">

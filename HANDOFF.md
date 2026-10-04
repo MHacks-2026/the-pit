@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI terminal preview] 15:25 CEST, Codex -> team
+Branch: ui/terminal-layout-preview (three UI commits, no main merge)
+Done: Added a restrained full-width shell, a divided /screen grid with HACK, Cop and BTC visible together on wide displays, a two-column /trade desk, and an unboxed /join form. Ticker omits the misleading 100/100 wording. Preview join links stay on the preview host. Created isolated Maincloud database `the-pit-ui-terminal-preview`, published the unchanged module, and started its own in-database bots. All 121 active tests and the full build pass after each UI commit.
+Not done / next: Set branch-specific Vercel Preview `NEXT_PUBLIC_SPACETIME_DB=the-pit-ui-terminal-preview` (and browser-reachable `NEXT_PUBLIC_SPACETIME_URI=wss://maincloud.spacetimedb.com`) in the team's Vercel project, redeploy, then check four viewport widths and join/trade/cancel/Cop flows. Current Vercel connector sees a different account with no team project.
+Gotchas: The branch preview build fails closed if its database variable is not the isolated database. Never use the production database for preview tests. `FrontEndChanges` remains separate.
+How to verify: `pnpm test`, `pnpm build`, then inspect the branch Vercel preview and its isolated database.
+Files touched: apps/web/app/{terminal.css,layout.tsx,JoinBadge.tsx,Ticker.tsx,screen,trade,join}, apps/web/next.config.ts, HANDOFF.md.
+
+---
+
 ## [Cop dashboard] 14:49 CEST, Codex -> team
 Branch: main (compact alert screen built from feat/cop-investigation-preview)
 Done: Reworked `/screen` surveillance display into one selected incident and a five-row recent list. It follows the newest case by default; selecting an older case keeps it visible while more alerts arrive, and Latest restores live focus. Each case shows suspected pattern, trader, time, one-line order/trade/cancel sequence, and a count. View evidence reveals each original finding with order IDs, price levels, trade ID and cancelled quantity. Removed the misleading 100/100 badge and long repeated narration from this view; alert data and detection are unchanged. Full test/build passed (121 unit tests).

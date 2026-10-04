@@ -193,3 +193,56 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
   .terminal-dashboard .terminal-leaders { grid-row: 9; }
   .terminal-dashboard .terminal-beat { grid-row: 10; }
 }
+
+/* Order desk and onboarding retain their controls with a flatter workspace. */
+.terminal-trade-page .trade-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 0;
+  max-width: none;
+  width: 100%;
+}
+.terminal-trade-page .trade-entry,
+.terminal-trade-page .trade-account { min-width: 0; padding: 24px clamp(16px, 2vw, 32px); border-bottom: 1px solid var(--line); }
+.terminal-trade-page .trade-entry { border-right: 1px solid var(--line); }
+.terminal-trade-page .trade-entry { display: flex; flex-direction: column; gap: 20px; }
+.terminal-trade-page .trade-account { display: flex; flex-direction: column; gap: 18px; }
+.terminal-trade-page .trade-who { margin: 0; color: var(--muted); }
+.terminal-trade-page .trade-who strong { color: var(--text); }
+.terminal-trade-page .trade-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.terminal-trade-page .trade-stats div { min-width: 0; padding: 13px 15px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: none; backdrop-filter: none; }
+.terminal-trade-page .trade-stats dt { color: var(--muted); font-size: 11px; }
+.terminal-trade-page .trade-stats dd { font-size: clamp(18px, 2vw, 28px); overflow-wrap: anywhere; }
+.terminal-trade-page .trade-steppers { gap: 20px; }
+.terminal-trade-page .stepper-button { border-color: var(--line); border-radius: 4px; background: var(--card); color: var(--text); }
+.terminal-trade-page .stepper-value { min-width: 36px; }
+.terminal-trade-page .trade-button { border-radius: 4px; box-shadow: none; }
+.terminal-trade-page .trade-buy { background: var(--buy); }
+.terminal-trade-page .trade-sell { background: var(--sell); }
+.terminal-trade-page .trade-order { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; backdrop-filter: none; }
+.terminal-trade-page .trade-orders { gap: 0; }
+.terminal-trade-page .trade-extras { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+.terminal-trade-page .trade-extras > * { min-width: 0; margin: 0; padding: 24px clamp(16px, 2vw, 32px); border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; }
+.terminal-trade-page .trade-extras > :last-child { border-right: 0; }
+.terminal-trade-page .join-button,
+.terminal-join-page .join-button { border-radius: 4px; border-color: var(--line); background: var(--card); color: var(--accent); }
+.terminal-trade-page .cop-button { border-radius: 4px; }
+.terminal-join-page .join-form,
+.terminal-join-page .join-success { max-width: 520px; padding: 28px 0; }
+.terminal-join-page .join-form { gap: 16px; }
+.terminal-join-page .join-label { color: var(--muted); }
+.terminal-join-page .join-input { border-color: var(--line); border-radius: 4px; background: var(--card); color: var(--text); }
+.terminal-join-page .join-perks { border-top-color: var(--line); color: var(--muted); }
+.terminal-join-page .join-perks li::before { border-radius: 2px; background: var(--accent); }
+@media (max-width: 760px) {
+  .terminal-trade-page .trade-panel,
+  .terminal-trade-page .trade-extras { grid-template-columns: minmax(0, 1fr); }
+  .terminal-trade-page .trade-entry,
+  .terminal-trade-page .trade-account,
+  .terminal-trade-page .trade-extras > * { border-right: 0; padding: 20px 0; }
+  .terminal-trade-page .trade-extras { grid-column: 1; }
+}
+@media (max-width: 520px) {
+  .terminal-trade-page .trade-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .terminal-trade-page .trade-steppers { grid-template-columns: minmax(0, 1fr); }
+}

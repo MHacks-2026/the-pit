@@ -107,20 +107,8 @@ function TradeInner() {
 
   return (
     <div className="trade-panel">
+      <section className="trade-entry" aria-label="Order entry">
       <p className="trade-who">Trading as <strong>{view.me.name}</strong></p>
-      <dl className="trade-stats">
-        <div><dt>Net worth</dt><dd>{Math.round(Number(view.me.cash) + view.position * mid).toLocaleString('en-US')}</dd></div>
-        <div>
-          <dt>Profit</dt>
-          <dd className={Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? 'rank-up' : 'rank-down'}>
-            {Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? '+' : '−'}{Math.abs(Math.round(Number(view.me.cash) + view.position * mid - 10_000)).toLocaleString('en-US')}
-          </dd>
-        </div>
-        <div><dt>Cash</dt><dd>{Number(view.me.cash).toLocaleString('en-US')}</dd></div>
-        <div><dt>Position</dt><dd>{view.position}</dd></div>
-        <div><dt>Last price</dt><dd>{view.lastPrice ?? '–'}</dd></div>
-        <div><dt>Bid / Ask</dt><dd>{view.bestBid ?? '–'} / {view.bestAsk ?? '–'}</dd></div>
-      </dl>
 
       <div className="trade-steppers">
         <div className="stepper">
@@ -151,6 +139,23 @@ function TradeInner() {
       {error ? <p className="join-error" role="alert">{error}</p> : null}
       {message ? <p className="join-status" role="status">{message}</p> : null}
 
+      </section>
+
+      <section className="trade-account" aria-label="Account and open orders">
+      <dl className="trade-stats">
+        <div><dt>Net worth</dt><dd>{Math.round(Number(view.me.cash) + view.position * mid).toLocaleString('en-US')}</dd></div>
+        <div>
+          <dt>Profit</dt>
+          <dd className={Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? 'rank-up' : 'rank-down'}>
+            {Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? '+' : '−'}{Math.abs(Math.round(Number(view.me.cash) + view.position * mid - 10_000)).toLocaleString('en-US')}
+          </dd>
+        </div>
+        <div><dt>Cash</dt><dd>{Number(view.me.cash).toLocaleString('en-US')}</dd></div>
+        <div><dt>Position</dt><dd>{view.position}</dd></div>
+        <div><dt>Last price</dt><dd>{view.lastPrice ?? '–'}</dd></div>
+        <div><dt>Bid / Ask</dt><dd>{view.bestBid ?? '–'} / {view.bestAsk ?? '–'}</dd></div>
+      </dl>
+
       <h3 className="trade-orders-title">Open orders</h3>
       {view.mine.length === 0 ? (
         <p className="join-hint">No open orders. Orders that don’t match right away wait here.</p>
@@ -166,9 +171,13 @@ function TradeInner() {
         </ul>
       )}
 
+      </section>
+
+      <div className="trade-extras">
       <BeatTheCop myHex={myHex ?? ''} cash={Number(view.me.cash)} position={view.position} mid={mid} lastPrice={view.lastPrice} bestAsk={view.bestAsk} />
 
       <CitationCard myHex={myHex ?? ''} name={view.me.name} />
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Ticker from '../Ticker';
 
 export default function Trade() {
   return (
-    <main className="screen">
+    <main className="screen terminal-trade-page">
       <PageHeader subtitle="Buy or sell HACK on the live exchange." />
       <Ticker />
       <section className="feed-shell" aria-labelledby="trade-heading">
