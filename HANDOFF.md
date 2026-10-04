@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI title size] 16:59 CEST, Codex -> team
+Branch: main (pending push)
+Done: Doubled THE PIT header title from 32–42px to 64–84px on desktop and from 28px to 56px on phones. Kept its /screen link and QR layout. All 121 active tests and full workspace build passed.
+Not done / next: Push and check production deployment.
+Gotchas: None.
+How to verify: Open /screen, /trade, and /join at desktop and phone widths; click title to return to /screen.
+Files touched: apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
 ## [UI header QR] 16:56 CEST, Codex -> team
 Branch: main (pending push)
 Done: Unified the production and preview header layout around a large QR and a single Join this market link. Production retains the static QR to the canonical join page; preview generates a QR for its own origin. THE PIT title now links to /screen on screen, trade, and join. No backend changes. 121 tests passed and full workspace build passed with the repo-local SpacetimeDB CLI.
