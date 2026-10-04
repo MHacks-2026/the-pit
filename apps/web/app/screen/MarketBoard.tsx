@@ -2,10 +2,12 @@
 
 import { useMemo } from 'react';
 import { SpacetimeDBProvider, useSpacetimeDB, useTable } from 'spacetimedb/react';
-import { DbConnection, tables } from '@the-pit/bindings';
+import { tables } from '@the-pit/bindings';
+import { liveConnectionBuilder } from '../../lib/live';
 import { COP_PENALTY } from '../../lib/copScore';
 import DepthChart from './DepthChart';
 import PriceChart from './PriceChart';
+import TraderBadge from '../TraderBadge';
 import { SCREEN_TRADES_WINDOW_MS, useOpenAndRecentOrders, useRecentTrades } from '../../lib/subscriptions';
 
 const HACK_MARKET_ID = 1;
@@ -56,7 +58,11 @@ function Board() {
     const maxQty = Math.max(1, ...bids.map(l => l.qty), ...asks.map(l => l.qty));
 
     const nameByKey = new Map<string, string>();
-    for (const a of accounts) nameByKey.set(a.identity.toHexString(), a.name || `Trader ${a.identity.toHexString().slice(0, 6)}`);
+    const botByKey = new Map<string, boolean>();
+    for (const a of accounts) {
+      nameByKey.set(a.identity.toHexString(), a.name || `Trader ${a.identity.toHexString().slice(0, 6)}`);
+      botByKey.set(a.identity.toHexString(), a.isBot);
+    }
     const sideByOrder = new Map<string, string>();
     for (const o of orders) sideByOrder.set(o.id.toString(), o.side);
 
@@ -79,6 +85,7 @@ function Board() {
       qty: t.qty,
       side: sideByOrder.get(t.takerOrderId.toString()) ?? null,
       who: nameByKey.get(t.taker.toHexString()) ?? 'Trader',
+      bot: botByKey.get(t.taker.toHexString()) ?? false,
       ts: micros(t.ts),
     }));
     const chart = marketTrades.slice(-CHART_POINTS).map(t => ({ price: t.price, ts: micros(t.ts) }));
@@ -130,140 +137,139 @@ function Board() {
   }, [orders, trades, accounts, positions, alerts, news]);
 
   if (connectionError) {
-    return <p className="feed-state" role="alert">The live market is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
+    return <p className="state" role="alert">The live market is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
   }
   if (!ordersReady) {
-    return <p className="feed-state" role="status">Connecting to the live market…</p>;
+    return <p className="state" role="status">Connecting to the live market…</p>;
   }
 
   const { allBids, allAsks, bids, asks, bestBid, bestAsk, maxQty, lastPrice, prevPrice, tape, chart, leaderboard, copBoard } = view;
   const spread = bestBid !== null && bestAsk !== null ? bestAsk - bestBid : null;
   const dir = lastPrice !== null && prevPrice !== null && lastPrice !== prevPrice ? (lastPrice > prevPrice ? 'up' : 'down') : 'flat';
 
+  const delta = dir !== 'flat' && lastPrice !== null && prevPrice !== null ? Math.abs(lastPrice - prevPrice) : null;
+
   return (
-    <div className="board-grid">
-      {view.newsText ? (
-        <p className="news-strip"><b>News</b>{view.newsText}</p>
-      ) : null}
-
-      <dl className="board-stats">
-        <div><dt>Volume (30 min)</dt><dd>{fmt(view.volume)}</dd></div>
-        <div><dt>Trades (30 min)</dt><dd>{fmt(view.tradeCount)}</dd></div>
-        <div><dt>Traders</dt><dd>{view.humans}<small> + {view.bots} bots</small></dd></div>
-        <div><dt>Open orders</dt><dd>{fmt(view.openOrders)}</dd></div>
-        <div><dt>Cop alerts</dt><dd className={view.alertCount > 0 ? 'stat-amber' : undefined}>{fmt(view.alertCount)}</dd></div>
-      </dl>
-
-      <section className="board-card" aria-label="Price">
-        <div className="board-cardhead"><h3>HACK</h3><span className="board-chip">Play dollars</span></div>
-        <div className="board-hero">
-          <p key={lastPrice ?? 'none'} className={`board-price flash-${dir}`}>{lastPrice === null ? '—' : lastPrice}</p>
-          {dir !== 'flat' && lastPrice !== null && prevPrice !== null ? (
-            <span className={`board-delta ${dir}`}>{dir === 'up' ? '▲' : '▼'} {Math.abs(lastPrice - prevPrice)}</span>
-          ) : null}
+    <div className="board">
+      <section className="quote" aria-label="Price">
+        <p className="quote-symbol">HACK</p>
+        <div className="quote-row">
+          <p key={lastPrice ?? 'none'} className={`quote-price flash-${dir}`}>{lastPrice === null ? '—' : lastPrice}</p>
+          {delta !== null ? <p className={`quote-delta ${dir}`}>{dir === 'up' ? '▲' : '▼'} {delta}</p> : null}
         </div>
-        <p className="board-sub">
-          Bid {bestBid ?? '—'} · Ask {bestAsk ?? '—'}{spread !== null ? ` · Spread ${spread}` : ''}
-        </p>
+        <dl className="quote-touch">
+          <div><dt>Bid</dt><dd>{bestBid ?? '—'}</dd></div>
+          <div><dt>Ask</dt><dd>{bestAsk ?? '—'}</dd></div>
+          <div><dt>Spread</dt><dd>{spread ?? '—'}</dd></div>
+        </dl>
         <PriceChart points={chart} />
-        <dl className="board-mini">
+        <dl className="quote-range">
           <div><dt>High</dt><dd>{view.high ?? '—'}</dd></div>
           <div><dt>Low</dt><dd>{view.low ?? '—'}</dd></div>
           <div>
-            <dt>30 min</dt>
-            <dd className={view.sessionChange === null ? undefined : view.sessionChange >= 0 ? 'rank-up' : 'rank-down'}>
+            <dt>Change, 30 min</dt>
+            <dd className={view.sessionChange === null ? undefined : view.sessionChange >= 0 ? 'up' : 'down'}>
               {view.sessionChange === null ? '—' : `${signed(view.sessionChange)}${view.sessionPct !== null ? ` (${view.sessionPct >= 0 ? '+' : '−'}${Math.abs(view.sessionPct).toFixed(1)}%)` : ''}`}
             </dd>
           </div>
         </dl>
       </section>
 
-      <section className="board-card" aria-label="Order book">
-        <div className="board-cardhead"><h3>Order book</h3>{spread !== null ? <span className="board-chip">Spread {spread}</span> : null}</div>
-        <div className="book-cols">
+      <section className="ladder" aria-label="Order book">
+        <h3>Order book</h3>
+        <div className="ladder-cols">
           <div>
-            <p className="book-colhead"><span>Bid</span><span>Size</span></p>
-            <ol className="book-side">
-              {bids.length === 0 ? <li className="board-sub">No bids</li> : bids.map(l => (
-                <li className="book-row book-bid" key={`b${l.price}`}>
-                  <span className="book-bar" style={{ width: `${(l.qty / maxQty) * 100}%` }} />
+            <p className="ladder-head"><span>Bid</span><span>Size</span></p>
+            <ol className="ladder-side">
+              {bids.length === 0 ? <li className="quiet">No bids</li> : bids.map(l => (
+                <li className="ladder-row ladder-bid" key={`b${l.price}`}>
+                  <span className="ladder-bar" style={{ width: `${(l.qty / maxQty) * 100}%` }} />
                   <span>{l.price}</span><span>{l.qty}</span>
                 </li>
               ))}
             </ol>
           </div>
           <div>
-            <p className="book-colhead"><span>Ask</span><span>Size</span></p>
-            <ol className="book-side">
-              {asks.length === 0 ? <li className="board-sub">No asks</li> : asks.map(l => (
-                <li className="book-row book-ask" key={`a${l.price}`}>
-                  <span className="book-bar" style={{ width: `${(l.qty / maxQty) * 100}%` }} />
+            <p className="ladder-head"><span>Ask</span><span>Size</span></p>
+            <ol className="ladder-side">
+              {asks.length === 0 ? <li className="quiet">No asks</li> : asks.map(l => (
+                <li className="ladder-row ladder-ask" key={`a${l.price}`}>
+                  <span className="ladder-bar" style={{ width: `${(l.qty / maxQty) * 100}%` }} />
                   <span>{l.price}</span><span>{l.qty}</span>
                 </li>
               ))}
             </ol>
           </div>
         </div>
-      </section>
-
-      <section className="board-card" aria-label="Market depth">
-        <div className="board-cardhead"><h3>Market depth</h3><span className="board-chip">Total size by price</span></div>
+        <h3 className="depth-title">Depth</h3>
         <DepthChart bids={allBids} asks={allAsks} />
       </section>
 
-      <section className="board-card" aria-label="Trade tape">
-        <div className="board-cardhead"><h3>Tape</h3><span className="board-chip">Latest trades</span></div>
-        {tape.length === 0 ? <p className="board-sub">No trades yet.</p> : (
-          <ol className="board-list">
+      <dl className="tally">
+        <div><dt>Traders</dt><dd>{view.humans}<small> and {view.bots} bots</small></dd></div>
+        <div><dt>Trades, 30 min</dt><dd>{fmt(view.tradeCount)}</dd></div>
+        <div><dt>Volume, 30 min</dt><dd>{fmt(view.volume)}</dd></div>
+        <div><dt>Open orders</dt><dd>{fmt(view.openOrders)}</dd></div>
+        <div className={view.alertCount > 0 ? 'tally-cop' : undefined}><dt>Cop alerts</dt><dd>{fmt(view.alertCount)}</dd></div>
+      </dl>
+
+      {view.newsText ? <p className="news"><b>News</b> {view.newsText}</p> : null}
+
+      <section className="tape" aria-label="Trade tape">
+        <h3>Tape</h3>
+        {tape.length === 0 ? <p className="quiet">No trades yet.</p> : (
+          <ol className="rows">
             {tape.map(t => (
               <li className="tape-row" key={t.id}>
-                <span className="tape-main">
-                  <b className={`tape-px ${t.side === 'sell' ? 'down' : 'up'}`}>{t.price}</b>
-                  <span className="tape-qty">× {t.qty}</span>
-                </span>
-                <span className="tape-who">{t.side ? `${t.who} ${t.side === 'buy' ? 'bought' : 'sold'}` : t.who}</span>
-                <time dateTime={new Date(t.ts).toISOString()}>{new Date(t.ts).toLocaleTimeString()}</time>
+                <b className={`tape-px ${t.side === 'sell' ? 'down' : 'up'}`}>{t.price}</b>
+                <span className="tape-qty">×{t.qty}</span>
+                <TraderBadge name={t.who} isBot={t.bot} />
+                <span className="tape-who">{t.side ? (t.side === 'buy' ? 'bought' : 'sold') : ''}</span>
+                <time dateTime={new Date(t.ts).toISOString()}>{new Date(t.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</time>
               </li>
             ))}
           </ol>
         )}
       </section>
 
-      <section className="board-card" aria-label="Leaderboard">
-        <div className="board-cardhead"><h3>Leaderboard</h3><span className="board-chip">Net worth, bots marked 🤖</span></div>
-        {leaderboard.length === 0 ? <p className="board-sub">No traders yet.</p> : (
-          <ol className="board-list">
+      <section className="standings" aria-label="Leaderboard">
+        <h3>Leaderboard</h3>
+        {leaderboard.length === 0 ? <p className="quiet">No traders yet.</p> : (
+          <ol className="rows">
             {leaderboard.map((row, i) => {
-              const delta = row.net - START_CASH;
+              const gain = row.net - START_CASH;
               return (
                 <li className="rank-row" key={row.key}>
                   <span className="rank-n">{i + 1}</span>
-                  <span>{row.isBot ? '🤖 ' : ''}{row.name}</span>
+                  <TraderBadge name={row.name} isBot={row.isBot} />
+                  <span className="rank-name">{row.name}</span>
                   <span className="rank-pos">{row.pos === 0 ? 'flat' : `${row.pos > 0 ? 'long' : 'short'} ${Math.abs(row.pos)}`}</span>
-                  <span>{fmt(row.net)}</span>
-                  <span className={delta >= 0 ? 'rank-up' : 'rank-down'}>{signed(delta)}</span>
+                  <span className="rank-net">{fmt(row.net)}</span>
+                  <span className={gain >= 0 ? 'up' : 'down'}>{signed(gain)}</span>
                 </li>
               );
             })}
           </ol>
         )}
+        <p className="quiet">Net worth at the current mid price. Outlined badges are bots.</p>
       </section>
 
-      <section className="board-card" aria-label="Beat the Cop">
-        <div className="board-cardhead"><h3>Beat the Cop</h3><span className="board-chip">Humans only</span></div>
-        {copBoard.length === 0 ? <p className="board-sub">No players yet.</p> : (
-          <ol className="board-list">
+      <section className="beat" aria-label="Beat the Cop">
+        <h3>Beat the Cop</h3>
+        {copBoard.length === 0 ? <p className="quiet">No players yet. Scan the code to take the challenge.</p> : (
+          <ol className="rows">
             {copBoard.map((row, i) => (
-              <li className="rank-row cop-row" key={row.key}>
+              <li className="rank-row beat-row" key={row.key}>
                 <span className="rank-n">{i + 1}</span>
-                <span>{row.name}</span>
-                <span className={row.score >= 0 ? 'rank-up' : 'rank-down'}>{signed(row.score)}</span>
+                <TraderBadge name={row.name} isBot={false} />
+                <span className="rank-name">{row.name}</span>
+                <span className={row.score >= 0 ? 'up' : 'down'}>{signed(row.score)}</span>
                 <span className="rank-pos">caught {row.caught}×</span>
               </li>
             ))}
           </ol>
         )}
-        <p className="board-sub">Profit minus {COP_PENALTY} points for every Cop alert.</p>
+        <p className="quiet">Score is profit minus {COP_PENALTY} for every Cop alert.</p>
       </section>
     </div>
   );
@@ -273,11 +279,9 @@ export default function MarketBoard() {
   const uri = process.env.NEXT_PUBLIC_SPACETIME_URI;
   const database = process.env.NEXT_PUBLIC_SPACETIME_DB;
   const validUri = uri && (process.env.NODE_ENV !== 'production' || uri.startsWith('wss://'));
-  const connectionBuilder = useMemo(() => validUri && database ? DbConnection.builder()
-    .withUri(uri)
-    .withDatabaseName(database) : null, [uri, database, validUri]);
+  const connectionBuilder = useMemo(() => validUri && database ? liveConnectionBuilder(uri, database) : null, [uri, database, validUri]);
   if (!connectionBuilder) {
-    return <p className="feed-state" role="alert">The live market is not configured. Set NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB.</p>;
+    return <p className="state" role="alert">The live market is not configured. Set NEXT_PUBLIC_SPACETIME_URI and NEXT_PUBLIC_SPACETIME_DB.</p>;
   }
   return <SpacetimeDBProvider connectionBuilder={connectionBuilder}><Board /></SpacetimeDBProvider>;
 }

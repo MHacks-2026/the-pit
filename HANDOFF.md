@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI] Trading-pit redesign + /trade join fix, Claude Code -> next
+Branch: main
+Done: Same features and data, new look. Big Shoulders (Chicago) for wordmark/prices/numbers, Atkinson Hyperlegible Next for text, via next/font (no new dependency). Palette: floor #14171c, chalk #ecede8, up #4ade80, down #ff6b5e, Cop tape #ffd23f (Cop only). Removed the starfield backdrop, eyebrow labels, middle-dot strings and the robot emoji; traders now wear jacket badges (apps/web/lib/badges.ts, tested; bots outlined). Motion: price ticks on change; police tape sweeps the top of /screen when a NEW Cop alert lands; alerts render as citation tickets. Also fixed a real bug: the Ticker's anonymous connection was reused for the whole page (SpacetimeDB shares one connection per database), so /trade never recognised the player who joined; every provider now uses liveConnectionBuilder with the saved token.
+Not done / next: Prasiddha, please review the frontend files. Revert with git revert if the team prefers the old look.
+Gotchas: Checked with screenshots at 390 px, 1440 px and 1920 px against a local bot market, including a live spoof (sweep + citation).
+How to verify: pnpm build; open /screen, /join, /trade
+Files touched: apps/web/app/* (globals.css rewritten, Backdrop.tsx removed, TraderBadge.tsx added), apps/web/lib/{badges,badges.test,live}.ts(x), HANDOFF.md
+
+---
+
 ## [D10] Tamper-evident market record, Claude Code -> next
 Branch: main (module change NOT yet published to Maincloud)
 Done: packages/cop/src/chain.ts: pure SHA-256 (NIST vectors + Node crypto cross-check), canonicalEvent, chainHash, verifyChain. Module: public event_chain + chain_head; every event_log insert appends a link in the same transaction; admin_reset_market writes a reset:<id> marker that links to the old head. audit-cli verifies the chain. /screen alert feed shows "Market record sealed: N linked events · head …". Bindings regenerated (also adds admin_bots_start/stop). Local: in-place upgrade from the previous module worked (old events counted as before-the-chain); hand-edited and hand-deleted events were reported as CHAIN_EVENT_ALTERED / CHAIN_EVENT_MISSING; reset + audit passes.

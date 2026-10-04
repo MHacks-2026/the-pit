@@ -94,7 +94,7 @@ function TradeInner() {
     return <p className="join-error" role="alert">Couldn’t reach the exchange. Check your connection and refresh.</p>;
   }
   if (!identity || !accountsReady) {
-    return <p className="feed-state" role="status">Loading your trader desk…</p>;
+    return <p className="state" role="status">Loading your trader desk…</p>;
   }
   if (!view.me) {
     return (
@@ -112,7 +112,7 @@ function TradeInner() {
         <div><dt>Net worth</dt><dd>{Math.round(Number(view.me.cash) + view.position * mid).toLocaleString('en-US')}</dd></div>
         <div>
           <dt>Profit</dt>
-          <dd className={Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? 'rank-up' : 'rank-down'}>
+          <dd className={Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? 'up' : 'down'}>
             {Number(view.me.cash) + view.position * mid - 10_000 >= 0 ? '+' : '−'}{Math.abs(Math.round(Number(view.me.cash) + view.position * mid - 10_000)).toLocaleString('en-US')}
           </dd>
         </div>
@@ -158,7 +158,7 @@ function TradeInner() {
         <ul className="trade-orders">
           {view.mine.map(order => (
             <li className="trade-order" key={order.id.toString()}>
-              <span className={order.side === 'buy' ? 'order-buy' : 'order-sell'}>{order.side.toUpperCase()}</span>
+              <span className={order.side === 'buy' ? 'up' : 'down'}>{order.side === 'buy' ? 'Buy' : 'Sell'}</span>
               <span>{order.remaining} @ {order.price}</span>
               <button className="join-button" type="button" onClick={() => cancel(order.id)}>Cancel</button>
             </li>

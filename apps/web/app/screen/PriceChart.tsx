@@ -40,7 +40,7 @@ export default function PriceChart({ points }: { points: PricePoint[] }) {
   );
 
   if (shown.length < 2) {
-    return <div>{tabs}<p className="board-sub">Waiting for more trades in this range.</p></div>;
+    return <div>{tabs}<p className="quiet">Waiting for more trades in this range.</p></div>;
   }
 
   const prices = shown.map(p => p.price);
@@ -89,8 +89,8 @@ export default function PriceChart({ points }: { points: PricePoint[] }) {
       >
         <defs>
           <linearGradient id="pcFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#64d2ff" stopOpacity=".22" />
-            <stop offset="1" stopColor="#64d2ff" stopOpacity="0" />
+            <stop offset="0" style={{ stopColor: 'var(--chalk)' }} stopOpacity=".14" />
+            <stop offset="1" style={{ stopColor: 'var(--chalk)' }} stopOpacity="0" />
           </linearGradient>
         </defs>
         {ticks.map((t, i) => (

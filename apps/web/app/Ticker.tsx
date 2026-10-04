@@ -5,7 +5,8 @@
 
 import { useMemo } from 'react';
 import { SpacetimeDBProvider, useTable } from 'spacetimedb/react';
-import { DbConnection, tables } from '@the-pit/bindings';
+import { tables } from '@the-pit/bindings';
+import { liveConnectionBuilder } from '../lib/live';
 import Marquee, { type MarqueeItem } from './screen/Marquee';
 import { PHONE_TRADES_WINDOW_MS, useOpenAndRecentOrders, useRecentTrades } from '../lib/subscriptions';
 
@@ -63,14 +64,14 @@ function TickerInner() {
     }
     const recent = [...alerts].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1)).slice(0, 3);
     for (const al of recent) {
-      out.push({ id: `a${al.id}`, kind: 'cop', label: `Cop alert · ${al.kind.charAt(0).toUpperCase()}${al.kind.slice(1).replaceAll('_', ' ')} on ${nameByKey.get(al.owner.toHexString()) ?? 'a trader'} ·`, value: `${al.score}/100` });
+      out.push({ id: `a${al.id}`, kind: 'cop', label: `Cop alert: ${al.kind.replaceAll('_', ' ')} by ${nameByKey.get(al.owner.toHexString()) ?? 'a trader'}, score`, value: `${al.score}` });
     }
     if (news.length) {
       const n = [...news].sort((a, b) => (a.ts.microsSinceUnixEpoch < b.ts.microsSinceUnixEpoch ? 1 : -1))[0];
-      out.push({ id: 'news', kind: 'news', label: 'News ·', value: n.text });
+      out.push({ id: 'news', kind: 'news', label: 'News', value: n.text });
     }
-    if (leader) out.push({ id: 'lead', kind: 'leader', label: `Leader · ${leader.name}`, value: signed(leader.net - START_CASH) });
-    out.push({ id: 'cta', kind: 'cta', label: 'Scan to trade ·', value: 'the-pit-seven.vercel.app/join' });
+    if (leader) out.push({ id: 'lead', kind: 'leader', label: `Leading: ${leader.name}`, value: signed(leader.net - START_CASH) });
+    out.push({ id: 'cta', kind: 'cta', label: 'Join at', value: 'the-pit-seven.vercel.app/join' });
     return out;
   }, [orders, trades, accounts, positions, alerts, news]);
 
@@ -81,9 +82,7 @@ export default function Ticker() {
   const uri = process.env.NEXT_PUBLIC_SPACETIME_URI;
   const database = process.env.NEXT_PUBLIC_SPACETIME_DB;
   const validUri = uri && (process.env.NODE_ENV !== 'production' || uri.startsWith('wss://'));
-  const connectionBuilder = useMemo(() => validUri && database ? DbConnection.builder()
-    .withUri(uri)
-    .withDatabaseName(database) : null, [uri, database, validUri]);
+  const connectionBuilder = useMemo(() => validUri && database ? liveConnectionBuilder(uri, database) : null, [uri, database, validUri]);
   if (!connectionBuilder) return null;
   return <SpacetimeDBProvider connectionBuilder={connectionBuilder}><TickerInner /></SpacetimeDBProvider>;
 }

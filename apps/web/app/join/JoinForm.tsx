@@ -40,7 +40,7 @@ function JoinInner() {
     return <p className="join-error" role="alert">Couldn’t reach the exchange. Check your connection and refresh.</p>;
   }
   if (!identity || !accountsReady) {
-    return <p className="feed-state" role="status">Connecting to the exchange…</p>;
+    return <p className="state" role="status">Connecting to the exchange…</p>;
   }
 
   if (me) {
@@ -66,11 +66,9 @@ function JoinInner() {
         value={name}
         onChange={event => setName(event.target.value)}
       />
-      <p className="join-hint">Starting cash is 10,000 play dollars.</p>
       {error ? <p className="join-error" role="alert">{error}</p> : null}
       <button className="join-button" type="submit" disabled={busy}>Join the Pit</button>
       <ul className="join-perks">
-        <li>Start with 10,000 play dollars</li>
         <li>Trade live against AI bots</li>
         <li>The Market Cop watches every order</li>
       </ul>
