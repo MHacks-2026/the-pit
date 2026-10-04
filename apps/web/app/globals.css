@@ -506,3 +506,13 @@ h1 { letter-spacing: -.04em; }
   .qr-badge-copy b { font-size: 17px; }
   .qr-badge-copy small { display: none; }
 }
+
+/* phones: no QR badge (you cannot scan the phone you are holding), keep the header tight so the form stays high */
+@media (max-width: 680px) {
+  .qr-badge { display: none; }
+  .screen-header { padding-bottom: 20px; }
+  .screen-header + .mq { margin-top: -8px; }
+  h1 { font-size: clamp(36px, 11vw, 48px); }
+  .brand-top { margin-bottom: 12px; }
+  .subtitle { margin-top: 8px; font-size: 16px; }
+}
