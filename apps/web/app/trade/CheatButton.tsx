@@ -18,7 +18,7 @@ const PAUSE_MS = 1000;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export default function CheatButton({ lastPrice, bestAsk }: { lastPrice: number | null; bestAsk: number | null }) {
+export default function CheatButton({ lastPrice, bestAsk, enabled }: { lastPrice: number | null; bestAsk: number | null; enabled: boolean }) {
   const placeOrder = useReducer(reducers.placeOrder);
   const cancelAll = useReducer(reducers.cancelAll);
   const [running, setRunning] = useState(false);
@@ -58,11 +58,12 @@ export default function CheatButton({ lastPrice, bestAsk }: { lastPrice: number 
 
   return (
     <div className="cheat-box">
-      <h3 className="trade-orders-title">Try to cheat</h3>
       <p className="join-hint">
-        Fake a wall of sell orders, trade the other way, then pull the wall. This is spoofing. Can you beat the Market Cop?
+        {enabled
+          ? 'The clock is running. Fake a wall of sell orders, trade the other way, then pull the wall. That’s spoofing. Can you get away with it?'
+          : 'Cheating unlocks once the challenge starts.'}
       </p>
-      <button className="cheat-button" type="button" disabled={running} onClick={run}>
+      <button className="cheat-button" type="button" disabled={running || !enabled} onClick={run}>
         {running ? 'Cheating…' : 'Try to cheat'}
       </button>
       {status ? <p className="join-status" role="status">{status}</p> : null}
