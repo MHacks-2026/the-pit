@@ -32,6 +32,17 @@ function useNarrations(alerts: AlertRow[], names: Map<string, string>) {
   return narrations;
 }
 
+/** The newest link of the tamper-evident market record (one row), so the room can see the record being sealed. */
+function RecordSeal() {
+  const [heads] = useTable(tables.chainHead);
+  const head = heads[0];
+  if (!head) return null;
+  return <p className="board-sub" title={`Latest SHA-256 link: ${head.hash}`}>
+    Market record sealed: {Number(head.seq).toLocaleString('en-US')} linked events · head <code>{head.hash.slice(0, 8)}…{head.hash.slice(-4)}</code>.
+    Editing or deleting any past event breaks every later link.
+  </p>;
+}
+
 function FeedContent() {
   const { connectionError } = useSpacetimeDB();
   const [alerts, alertsReady] = useTable(tables.alert);
@@ -42,9 +53,12 @@ function FeedContent() {
 
   if (connectionError) return <p className="feed-state" role="alert">The live alert feed is unavailable. Check the SpacetimeDB endpoint and database configuration.</p>;
   if (!alertsReady) return <p className="feed-state" role="status">Connecting to the live alert feed…</p>;
-  if (!latest.length) return <p className="feed-state" role="status">No alerts yet. The Market Cop is watching the order stream.</p>;
+  if (!latest.length) return <>
+    <p className="feed-state" role="status">No alerts yet. The Market Cop is watching the order stream.</p>
+    <RecordSeal />
+  </>;
 
-  return <ol className="alert-list" aria-live="polite">
+  return <><ol className="alert-list" aria-live="polite">
     {latest.map(alert => {
       let detail = 'Structured evidence recorded.';
       try {
@@ -62,7 +76,8 @@ function FeedContent() {
         </time>
       </li>;
     })}
-  </ol>;
+  </ol>
+  <RecordSeal /></>;
 }
 
 export default function AlertFeed() {

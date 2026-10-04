@@ -35,6 +35,34 @@ export const Alert = __t.object("Alert", {
 });
 export type Alert = __Infer<typeof Alert>;
 
+export const AlertIncident = __t.object("AlertIncident", {
+  incidentKey: __t.string(),
+});
+export type AlertIncident = __Infer<typeof AlertIncident>;
+
+export const BotTickSchedule = __t.object("BotTickSchedule", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+});
+export type BotTickSchedule = __Infer<typeof BotTickSchedule>;
+
+export const ChainHead = __t.object("ChainHead", {
+  id: __t.u32(),
+  seq: __t.u64(),
+  hash: __t.string(),
+});
+export type ChainHead = __Infer<typeof ChainHead>;
+
+export const EventChain = __t.object("EventChain", {
+  seq: __t.u64(),
+  eventId: __t.u64(),
+  marker: __t.string(),
+  ts: __t.timestamp(),
+  prevHash: __t.string(),
+  hash: __t.string(),
+});
+export type EventChain = __Infer<typeof EventChain>;
+
 export const EventLog = __t.object("EventLog", {
   id: __t.u64(),
   kind: __t.string(),
@@ -45,6 +73,12 @@ export const EventLog = __t.object("EventLog", {
 });
 export type EventLog = __Infer<typeof EventLog>;
 
+export const IdCounter = __t.object("IdCounter", {
+  id: __t.u32(),
+  nextId: __t.u64(),
+});
+export type IdCounter = __Infer<typeof IdCounter>;
+
 export const Market = __t.object("Market", {
   id: __t.u32(),
   symbol: __t.string(),
@@ -53,6 +87,12 @@ export const Market = __t.object("Market", {
   status: __t.string(),
 });
 export type Market = __Infer<typeof Market>;
+
+export const MarketState = __t.object("MarketState", {
+  marketId: __t.u32(),
+  lastTradePrice: __t.i32(),
+});
+export type MarketState = __Infer<typeof MarketState>;
 
 export const News = __t.object("News", {
   id: __t.u64(),
@@ -84,6 +124,12 @@ export const Position = __t.object("Position", {
 });
 export type Position = __Infer<typeof Position>;
 
+export const SimState = __t.object("SimState", {
+  id: __t.u32(),
+  state: __t.string(),
+});
+export type SimState = __Infer<typeof SimState>;
+
 export const Trade = __t.object("Trade", {
   id: __t.u64(),
   marketId: __t.u32(),
@@ -96,3 +142,4 @@ export const Trade = __t.object("Trade", {
   ts: __t.timestamp(),
 });
 export type Trade = __Infer<typeof Trade>;
+

@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [D10] Tamper-evident market record, Claude Code -> next
+Branch: main (module change NOT yet published to Maincloud)
+Done: packages/cop/src/chain.ts: pure SHA-256 (NIST vectors + Node crypto cross-check), canonicalEvent, chainHash, verifyChain. Module: public event_chain + chain_head; every event_log insert appends a link in the same transaction; admin_reset_market writes a reset:<id> marker that links to the old head. audit-cli verifies the chain. /screen alert feed shows "Market record sealed: N linked events · head …". Bindings regenerated (also adds admin_bots_start/stop). Local: in-place upgrade from the previous module worked (old events counted as before-the-chain); hand-edited and hand-deleted events were reported as CHAIN_EVENT_ALTERED / CHAIN_EVENT_MISSING; reset + audit passes.
+Not done / next: Publish to Maincloud (same publish as D9 and the reset). Optional: post the head hash somewhere public on a schedule.
+Gotchas: Run the live integration test files one at a time against one database (they trade at the same prices and collide if Vitest runs them in parallel). Owner can still rewrite every hash consistently; see LIMITATIONS.
+How to verify: pnpm test && pnpm build; audit-cli against a database (docs/RUNNER.md, "Verify the market record")
+Files touched: packages/cop/src/{chain,chain.test,index}.ts, spacetimedb/spacetimedb/src/index.ts, packages/bindings/src/*, apps/runner/src/audit-cli.ts, apps/web/app/screen/AlertFeed.tsx, docs/{LIMITATIONS,RUNNER,DECISIONS}.md, HANDOFF.md
+
+---
+
 ## [T24] admin_reset_market, Claude Code -> next
 Branch: main (module change NOT yet published to Maincloud)
 Done: admin_reset_market(marketId) deletes the market's orders, trades, positions, event log, news, all alerts and every human account; bots stay at 10,000 cash; in-database bots restart from a fresh state. spacetimedb/test/reset.test.ts (live, needs PIT_TEST_DATABASE + ADMIN_TOKEN) passes, including "admin only" for players. Locally: reset of a live bot market took 16 ms and bots resumed trading within seconds (audit passed); 30k orders + 15k trades + 45k events reset in 114 ms. T24 ticked (QR and starting cash were already done).

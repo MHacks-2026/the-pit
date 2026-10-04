@@ -47,3 +47,11 @@ and every human account; bot accounts stay with cash back at 10,000, and in-data
 a market with 30,002 orders, 15,001 trades and 45,003 events reset in 114 ms. There is no browser button on purpose:
 admin calls need the owner's token, which must never be shipped to the web app.
 
+## Verify the market record
+
+Every event is chained with SHA-256 (`event_chain`, `chain_head`, both public). To check that no past event was edited,
+deleted or inserted, run from `apps/runner` with the database's public address:
+`NEXT_PUBLIC_SPACETIME_URI=wss://maincloud.spacetimedb.com NEXT_PUBLIC_SPACETIME_DB=the-pit-mhacks-2026 node --import tsx src/audit-cli.ts`.
+It prints the number of links and the head hash (compare it with the Big Screen) and names the first altered or missing event.
+No login is needed: the tables are public, so anyone can verify.
+

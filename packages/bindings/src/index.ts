@@ -34,6 +34,8 @@ import {
 } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AdminBotsStartReducer from "./admin_bots_start_reducer";
+import AdminBotsStopReducer from "./admin_bots_stop_reducer";
 import AdminPostNewsReducer from "./admin_post_news_reducer";
 import AdminRaiseAlertReducer from "./admin_raise_alert_reducer";
 import AdminRegisterBotReducer from "./admin_register_bot_reducer";
@@ -49,6 +51,8 @@ import PlaceOrderReducer from "./place_order_reducer";
 // Import all table schema definitions
 import AccountRow from "./account_table";
 import AlertRow from "./alert_table";
+import ChainHeadRow from "./chain_head_table";
+import EventChainRow from "./event_chain_table";
 import EventLogRow from "./event_log_table";
 import MarketRow from "./market_table";
 import NewsRow from "./news_table";
@@ -82,11 +86,36 @@ const tablesSchema = __schema({
       { name: 'alert_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, AlertRow),
+  chainHead: __table({
+    name: 'chain_head',
+    indexes: [
+      { accessor: 'id', name: 'chain_head_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+    ],
+    constraints: [
+      { name: 'chain_head_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ChainHeadRow),
+  eventChain: __table({
+    name: 'event_chain',
+    indexes: [
+      { accessor: 'seq', name: 'event_chain_seq_idx_btree', algorithm: 'btree', columns: [
+        'seq',
+      ] },
+    ],
+    constraints: [
+      { name: 'event_chain_seq_key', constraint: 'unique', columns: ['seq'] },
+    ],
+  }, EventChainRow),
   eventLog: __table({
     name: 'event_log',
     indexes: [
       { accessor: 'id', name: 'event_log_id_idx_btree', algorithm: 'btree', columns: [
         'id',
+      ] },
+      { accessor: 'ts', name: 'event_log_ts_idx_btree', algorithm: 'btree', columns: [
+        'ts',
       ] },
     ],
     constraints: [
@@ -121,6 +150,9 @@ const tablesSchema = __schema({
       { accessor: 'id', name: 'order_id_idx_btree', algorithm: 'btree', columns: [
         'id',
       ] },
+      { accessor: 'status', name: 'order_status_idx_btree', algorithm: 'btree', columns: [
+        'status',
+      ] },
     ],
     constraints: [
       { name: 'order_id_key', constraint: 'unique', columns: ['id'] },
@@ -152,6 +184,8 @@ const tablesSchema = __schema({
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
+  __reducerSchema("admin_bots_start", AdminBotsStartReducer),
+  __reducerSchema("admin_bots_stop", AdminBotsStopReducer),
   __reducerSchema("admin_post_news", AdminPostNewsReducer),
   __reducerSchema("admin_raise_alert", AdminRaiseAlertReducer),
   __reducerSchema("admin_register_bot", AdminRegisterBotReducer),
@@ -219,3 +253,4 @@ export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
     return new SubscriptionBuilder(this);
   };
 }
+

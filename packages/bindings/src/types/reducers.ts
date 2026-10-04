@@ -6,6 +6,8 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
+import AdminBotsStartReducer from "../admin_bots_start_reducer";
+import AdminBotsStopReducer from "../admin_bots_stop_reducer";
 import AdminPostNewsReducer from "../admin_post_news_reducer";
 import AdminRaiseAlertReducer from "../admin_raise_alert_reducer";
 import AdminRegisterBotReducer from "../admin_register_bot_reducer";
@@ -16,6 +18,8 @@ import CancelOrderReducer from "../cancel_order_reducer";
 import JoinReducer from "../join_reducer";
 import PlaceOrderReducer from "../place_order_reducer";
 
+export type AdminBotsStartParams = __Infer<typeof AdminBotsStartReducer>;
+export type AdminBotsStopParams = __Infer<typeof AdminBotsStopReducer>;
 export type AdminPostNewsParams = __Infer<typeof AdminPostNewsReducer>;
 export type AdminRaiseAlertParams = __Infer<typeof AdminRaiseAlertReducer>;
 export type AdminRegisterBotParams = __Infer<typeof AdminRegisterBotReducer>;
@@ -25,3 +29,4 @@ export type CancelAllParams = __Infer<typeof CancelAllReducer>;
 export type CancelOrderParams = __Infer<typeof CancelOrderReducer>;
 export type JoinParams = __Infer<typeof JoinReducer>;
 export type PlaceOrderParams = __Infer<typeof PlaceOrderReducer>;
+

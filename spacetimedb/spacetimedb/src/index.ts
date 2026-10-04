@@ -1,7 +1,7 @@
 import { schema, table, t, SenderError, Range, type ReducerCtx } from 'spacetimedb/server';
 import { Identity, ScheduleAt, Timestamp } from 'spacetimedb';
 import { initialLiveState, LIVE_BOTS, planLiveTick, type LiveBot, type LiveState, type LiveView } from '@the-pit/bots';
-import { detectSpoofing, parseEventLog, type CopEvent } from '@the-pit/cop';
+import { canonicalEvent, canonicalMarker, chainHash, detectSpoofing, GENESIS_HASH, parseEventLog, type CopEvent } from '@the-pit/cop';
 import { matchOrder, cancelOrder as cancelBookOrder, type Book, type MatchResult } from '@the-pit/engine';
 
 const account = table({ public: true }, {
@@ -48,9 +48,15 @@ const simState = table({ name: 'sim_state' }, { id: t.u32().primaryKey(), state:
 const botTickSchedule = table({ name: 'bot_tick_schedule' }, { scheduledId: t.u64().primaryKey().autoInc(), scheduledAt: t.scheduleAt() });
 // Incidents already alerted on, so the in-database Cop (and admin_raise_alert) never alert twice.
 const alertIncident = table({ name: 'alert_incident' }, { incidentKey: t.string().primaryKey() });
+// Tamper-evident record: each event_log row (and each reset marker) gets a SHA-256 link to the previous one. Public, so
+// anyone can verify; chain_head is the newest link, shown on the Big Screen.
+const eventChain = table({ name: 'event_chain', public: true }, {
+  seq: t.u64().primaryKey(), eventId: t.u64(), marker: t.string(), ts: t.timestamp(), prevHash: t.string(), hash: t.string(),
+});
+const chainHead = table({ name: 'chain_head', public: true }, { id: t.u32().primaryKey(), seq: t.u64(), hash: t.string() });
 
 const spacetimedb = schema({ account, market, order, trade, position, eventLog, alert, news, adminConfig, idCounter, marketState,
-  simState, botTickSchedule, alertIncident });
+  simState, botTickSchedule, alertIncident, eventChain, chainHead });
 export default spacetimedb;
 
 type ModuleCtx = ReducerCtx<typeof spacetimedb.schemaType>;
@@ -123,6 +129,17 @@ function allocate(counter: { value: bigint }): number {
   return id;
 }
 
+/** Appends one link to the market record in the current transaction and moves the head. */
+function appendChain(ctx: ModuleCtx, eventId: bigint, marker: string, canonical: string): void {
+  const head = ctx.db.chainHead.id.find(1);
+  const seq = (head?.seq ?? 0n) + 1n;
+  const prevHash = head?.hash ?? GENESIS_HASH;
+  const hash = chainHash(prevHash, canonical);
+  ctx.db.eventChain.insert({ seq, eventId, marker, ts: ctx.timestamp, prevHash, hash });
+  if (head) ctx.db.chainHead.id.update({ id: 1, seq, hash });
+  else ctx.db.chainHead.insert({ id: 1, seq, hash });
+}
+
 function persistResult(ctx: ModuleCtx, result: MatchResult, counter: { value: bigint }, identityByHex: Map<string, Identity>): void {
   const failure = result.events.find(event => event.kind === 'rejected');
   if (failure?.kind === 'rejected') throw new SenderError(failure.reason);
@@ -179,7 +196,11 @@ function persistResult(ctx: ModuleCtx, result: MatchResult, counter: { value: bi
     const owner = event.kind === 'trade' ? event.trade.taker : event.kind === 'order_placed' ? event.order.owner : event.owner;
     const marketId = event.kind === 'trade' ? event.trade.marketId : event.kind === 'order_placed' ? event.order.marketId : result.book.orders.find(row => row.id === event.orderId)?.marketId;
     if (marketId === undefined) throw new SenderError('event market missing');
-    ctx.db.eventLog.insert({ id: BigInt(allocate(counter)), kind: event.kind, owner: identity(owner), marketId, payload: JSON.stringify(event), ts: ctx.timestamp });
+    const eventId = BigInt(allocate(counter));
+    const payload = JSON.stringify(event);
+    ctx.db.eventLog.insert({ id: eventId, kind: event.kind, owner: identity(owner), marketId, payload, ts: ctx.timestamp });
+    appendChain(ctx, eventId, '', canonicalEvent({ id: Number(eventId), kind: event.kind, owner, marketId, payload,
+      ts: ctx.timestamp.microsSinceUnixEpoch.toString() }));
   }
   const stored = ctx.db.idCounter.id.find(1)!;
   ctx.db.idCounter.id.update({ ...stored, nextId: counter.value });
@@ -334,6 +355,10 @@ export const adminResetMarket = spacetimedb.reducer({ marketId: t.u32() }, (ctx,
   for (const row of [...ctx.db.alert.iter()]) ctx.db.alert.id.delete(row.id);
   for (const row of [...ctx.db.alertIncident.iter()]) ctx.db.alertIncident.incidentKey.delete(row.incidentKey);
   ctx.db.marketState.marketId.delete(marketId);
+  // The record restarts with a reset marker that links to the previous head, so the reset itself is on the record.
+  for (const row of [...ctx.db.eventChain.iter()]) ctx.db.eventChain.seq.delete(row.seq);
+  const marker = `reset:${marketId}`;
+  appendChain(ctx, 0n, marker, canonicalMarker(marker, ctx.timestamp.microsSinceUnixEpoch.toString()));
   for (const row of [...ctx.db.account.iter()]) {
     if (!row.isBot) ctx.db.account.identity.delete(row.identity);
     else if (row.cash !== 10_000n) ctx.db.account.identity.update({ ...row, cash: 10_000n });

@@ -25,6 +25,8 @@
 
 - **On real-data markets the results hold, including the limits.** On 171 held-out real price paths with every bot trading, the Cop caught the default spoofer in 171/171 sessions with 0 false alarms (market maker and adaptive AI included), and missed both evasive variants in 171/171. In those sessions the spoofer still made money on average (+67) and the adaptive AI lost most when it was present, so catching spoofing matters even when it is detected after the fact. See `docs/REAL_DATA_EVAL.md`.
 
+- **The market record is tamper-evident, not tamper-proof.** Every event_log row (and every market reset) is chained to the previous one with SHA-256 in the same transaction, in public `event_chain` / `chain_head` tables, and `apps/runner/src/audit-cli.ts` recomputes every link. Tested: editing or deleting a past event by hand is reported precisely. The database owner could still rewrite every hash consistently; the protection is that the latest head is shown live on the Big Screen, so a later rewrite would not match what people already saw. Publishing heads somewhere independent is the next step. Events written before the upgrade are not covered (the audit counts them).
+
 ## One-line answer for judges
 
 "Our spoofer was tuned to the Cop's rule, so the table shows they agree, not that the Cop generalises. If the spoofer waits 4 seconds before trading, or 6 seconds before cancelling, the Cop misses it every time. It's a transparent rule-based detector on simulated play-money data, not a production surveillance system."

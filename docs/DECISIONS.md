@@ -11,3 +11,4 @@ One line per decision, with the reason. Newest at the bottom.
 - D7 Play money only. No real money or real brokerage data, ever.
 - D8 Track: FinTech (plus Grand Prize). Reason: a live exchange with manipulation surveillance is a fintech product; sponsor prizes stay as in D3.
 - D9 Bots and the Market Cop run inside the SpacetimeDB module (scheduled bot_tick; Cop in the cancel transaction). Reason: no PC to keep awake during judging, alerts land atomically with the spoof, one deployable backend. The runner stays as a fallback until Maincloud is switched over.
+- D10 The event log is a SHA-256 hash chain (event_chain, chain_head), written in the same transaction as each event and verified by audit-cli. Reason: trading records must be provably unaltered; the live head on the Big Screen makes later rewrites detectable.
