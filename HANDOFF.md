@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [UI header QR] 16:56 CEST, Codex -> team
+Branch: main (pending push)
+Done: Unified the production and preview header layout around a large QR and a single Join this market link. Production retains the static QR to the canonical join page; preview generates a QR for its own origin. THE PIT title now links to /screen on screen, trade, and join. No backend changes. 121 tests passed and full workspace build passed with the repo-local SpacetimeDB CLI.
+Not done / next: Push and verify deployment.
+Gotchas: On narrow phones the QR remains hidden and the join link remains visible.
+How to verify: `pnpm test`; prepend `.tools/spacetime` to PATH and run `pnpm build`; open production /screen, /trade, /join.
+Files touched: JoinBadge.tsx, PageHeader.tsx, PreviewQr.tsx, terminal.css, HANDOFF.md.
+
+---
+
 ## [UI terminal main merge] 16:45 CEST, Codex -> team
 Branch: main (merged ui/terminal-layout-preview after origin/main 62fc6a0)
 Done: Preserved the latest team README and citation coaching tip, then merged the reviewed terminal UI without conflicts. The full merged tree passed 121 active tests and `pnpm build`; six integration tests remain skipped by their existing configuration. No SpacetimeDB module, shared type, or runner changes. The UI retains live actions, Cop evidence and scrolling, BTC watch, and isolated preview safety guard.

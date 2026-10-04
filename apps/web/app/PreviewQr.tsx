@@ -11,7 +11,7 @@ export default function PreviewQr() {
 
   if (!joinUrl) return <span className="preview-qr-placeholder" aria-hidden="true" />;
 
-  const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=4&data=${encodeURIComponent(joinUrl)}`;
+  const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=4&data=${encodeURIComponent(joinUrl)}`;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className="preview-qr-image" src={imageUrl} alt={`QR code to join this market at ${joinUrl}`} width={96} height={96} />;
+  return <img className="preview-qr-image" src={imageUrl} alt={`QR code to join this market at ${joinUrl}`} width={168} height={168} />;
 }

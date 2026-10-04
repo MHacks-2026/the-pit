@@ -8,7 +8,7 @@ export default function PageHeader() {
           <p className="eyebrow">MHacks 2026</p>
           <div className="live-pill"><span className="live-dot" /> Live</div>
         </div>
-        <h1>THE PIT</h1>
+        <h1><a className="brand-home" href="/screen">THE PIT</a></h1>
       </div>
       <JoinBadge />
     </header>
