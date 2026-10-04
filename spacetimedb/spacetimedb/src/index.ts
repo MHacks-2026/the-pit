@@ -12,7 +12,8 @@ const market = table({ public: true }, {
 const order = table({ public: true }, {
   id: t.u64().primaryKey().autoInc(), marketId: t.u32(), owner: t.identity(),
   side: t.string(), price: t.i32(), qty: t.u32(), remaining: t.u32(),
-  status: t.string(), ts: t.timestamp(),
+  // Indexed so loading the book reads only open orders, not the whole order history.
+  status: t.string().index('btree'), ts: t.timestamp(),
 });
 const trade = table({ public: true }, {
   id: t.u64().primaryKey().autoInc(), marketId: t.u32(), price: t.i32(),
@@ -36,11 +37,14 @@ const news = table({ public: true }, {
 });
 const adminConfig = table({ name: 'admin_config' }, { ownerIdentity: t.identity().primaryKey() });
 const idCounter = table({ name: 'id_counter' }, { id: t.u32().primaryKey(), nextId: t.u64() });
+// Last trade price per market, kept up to date by persistResult so no reducer has to scan the trade table.
+const marketState = table({ name: 'market_state' }, { marketId: t.u32().primaryKey(), lastTradePrice: t.i32() });
 
-const spacetimedb = schema({ account, market, order, trade, position, eventLog, alert, news, adminConfig, idCounter });
+const spacetimedb = schema({ account, market, order, trade, position, eventLog, alert, news, adminConfig, idCounter, marketState });
 export default spacetimedb;
 
 type ModuleCtx = ReducerCtx<typeof spacetimedb.schemaType>;
+type Identity = ModuleCtx['sender'];
 
 function requireAdmin(ctx: ModuleCtx): void {
   const admin = ctx.db.adminConfig.iter().next().value;
@@ -49,33 +53,58 @@ function requireAdmin(ctx: ModuleCtx): void {
   }
 }
 
-function loadBook(ctx: ModuleCtx): Book {
-  const accounts: Book['accounts'] = {};
-  for (const row of ctx.db.account.iter()) accounts[row.identity.toHexString()] = { cash: Number(row.cash), positions: {} };
-  for (const row of ctx.db.position.iter()) {
-    const owner = row.owner.toHexString();
-    if (accounts[owner]) accounts[owner].positions[row.marketId] = { qty: row.qty, avgPrice: row.avgPrice };
+/** Last trade price for a market. Rebuilt once from the trade table if missing (e.g. right after an upgrade). */
+function lastTradePriceOf(ctx: ModuleCtx, marketId: number): number | undefined {
+  const state = ctx.db.marketState.marketId.find(marketId);
+  if (state) return state.lastTradePrice;
+  let latest: { time: bigint; price: number } | undefined;
+  for (const row of ctx.db.trade.iter()) {
+    if (row.marketId !== marketId) continue;
+    const time = row.ts.microsSinceUnixEpoch;
+    if (!latest || time >= latest.time) latest = { time, price: row.price };
   }
+  if (!latest) return undefined;
+  ctx.db.marketState.insert({ marketId, lastTradePrice: latest.price });
+  return latest.price;
+}
+
+interface LoadedBook { book: Book; identities: Map<string, Identity> }
+
+/**
+ * The engine only needs open orders, the caller's account and the accounts of resting-order owners (its possible
+ * counterparties), so that is all we read. Cost grows with open orders, not with the exchange's history.
+ */
+function loadBook(ctx: ModuleCtx, sender: Identity): LoadedBook {
   const orders: Book['orders'] = [];
-  for (const row of ctx.db.order.iter()) {
-    if (row.status !== 'open' || row.remaining === 0) continue;
+  const identities = new Map<string, Identity>([[sender.toHexString(), sender]]);
+  for (const row of ctx.db.order.status.filter('open')) {
+    if (row.remaining === 0) continue;
+    const owner = row.owner.toHexString();
+    identities.set(owner, row.owner);
     orders.push({
-      id: Number(row.id), marketId: row.marketId, owner: row.owner.toHexString(),
+      id: Number(row.id), marketId: row.marketId, owner,
       side: row.side as 'buy' | 'sell', price: row.price, qty: row.qty,
       remaining: row.remaining, status: 'open', tif: 'GTC',
       ts: Number(row.ts.microsSinceUnixEpoch / 1000n),
     });
   }
-  const lastTradePrice: Book['lastTradePrice'] = {};
-  const lastTradeTime: Record<number, bigint> = {};
-  for (const row of ctx.db.trade.iter()) {
-    const time = row.ts.microsSinceUnixEpoch;
-    if (lastTradeTime[row.marketId] === undefined || time >= lastTradeTime[row.marketId]) {
-      lastTradeTime[row.marketId] = time;
-      lastTradePrice[row.marketId] = row.price;
+  const marketIds = [...ctx.db.market.iter()].map(row => row.id);
+  const accounts: Book['accounts'] = {};
+  for (const [owner, identity] of identities) {
+    const row = ctx.db.account.identity.find(identity);
+    if (!row) continue;
+    accounts[owner] = { cash: Number(row.cash), positions: {} };
+    for (const marketId of marketIds) {
+      const position = ctx.db.position.id.find(`${owner}:${marketId}`);
+      if (position) accounts[owner].positions[marketId] = { qty: position.qty, avgPrice: position.avgPrice };
     }
   }
-  return { orders, accounts, lastTradePrice };
+  const lastTradePrice: Book['lastTradePrice'] = {};
+  for (const marketId of marketIds) {
+    const price = lastTradePriceOf(ctx, marketId);
+    if (price !== undefined) lastTradePrice[marketId] = price;
+  }
+  return { book: { orders, accounts, lastTradePrice }, identities };
 }
 
 function allocate(counter: { value: bigint }): number {
@@ -85,10 +114,9 @@ function allocate(counter: { value: bigint }): number {
   return id;
 }
 
-function persistResult(ctx: ModuleCtx, result: MatchResult, counter: { value: bigint }): void {
+function persistResult(ctx: ModuleCtx, result: MatchResult, counter: { value: bigint }, identityByHex: Map<string, Identity>): void {
   const failure = result.events.find(event => event.kind === 'rejected');
   if (failure?.kind === 'rejected') throw new SenderError(failure.reason);
-  const identityByHex = new Map([...ctx.db.account.iter()].map(row => [row.identity.toHexString(), row.identity]));
   const identity = (hex: string) => {
     const value = identityByHex.get(hex);
     if (!value) throw new SenderError('account identity missing');
@@ -113,6 +141,9 @@ function persistResult(ctx: ModuleCtx, result: MatchResult, counter: { value: bi
       maker: identity(row.maker), taker: identity(row.taker),
       makerOrderId: BigInt(row.makerOrderId), takerOrderId: BigInt(row.takerOrderId), ts: ctx.timestamp,
     });
+    const state = ctx.db.marketState.marketId.find(row.marketId);
+    if (state) ctx.db.marketState.marketId.update({ ...state, lastTradePrice: row.price });
+    else ctx.db.marketState.insert({ marketId: row.marketId, lastTradePrice: row.price });
   }
   for (const [owner, state] of Object.entries(result.book.accounts)) {
     const ownerIdentity = identity(owner);
@@ -167,26 +198,29 @@ export const placeOrder = spacetimedb.reducer(
     if (!marketRow || marketRow.status !== 'open') throw new SenderError('market not open');
     if (price !== 0 && price !== 2_147_483_647 && price % marketRow.tick !== 0) throw new SenderError('price not on tick');
     const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
+    const { book, identities } = loadBook(ctx, ctx.sender);
     const result = matchOrder(
-      loadBook(ctx),
+      book,
       { marketId, owner: ctx.sender.toHexString(), side, price, qty, tif },
       { now: Number(ctx.timestamp.microsSinceUnixEpoch / 1000n), nextId: () => allocate(counter) }
     );
-    persistResult(ctx, result, counter);
+    persistResult(ctx, result, counter, identities);
   }
 );
 
 export const cancelOrder = spacetimedb.reducer({ orderId: t.u64() }, (ctx, { orderId }) => {
   const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
-  const result = cancelBookOrder(loadBook(ctx), Number(orderId), ctx.sender.toHexString(), {
+  const { book, identities } = loadBook(ctx, ctx.sender);
+  const result = cancelBookOrder(book, Number(orderId), ctx.sender.toHexString(), {
     now: Number(ctx.timestamp.microsSinceUnixEpoch / 1000n), nextId: () => allocate(counter),
   });
-  persistResult(ctx, result, counter);
+  persistResult(ctx, result, counter, identities);
 });
 export const cancelAll = spacetimedb.reducer(ctx => {
   const counter = { value: ctx.db.idCounter.id.find(1)!.nextId };
   const owner = ctx.sender.toHexString();
-  let book = loadBook(ctx);
+  const loaded = loadBook(ctx, ctx.sender);
+  let book = loaded.book;
   const events: MatchResult['events'] = [];
   for (const row of book.orders.filter(row => row.owner === owner)) {
     const result = cancelBookOrder(book, row.id, owner, {
@@ -195,7 +229,7 @@ export const cancelAll = spacetimedb.reducer(ctx => {
     book = result.book;
     events.push(...result.events);
   }
-  persistResult(ctx, { book, trades: [], events }, counter);
+  persistResult(ctx, { book, trades: [], events }, counter, loaded.identities);
 });
 export const adminSettle = spacetimedb.reducer({ marketId: t.u32(), outcome: t.bool() }, ctx => {
   requireAdmin(ctx);

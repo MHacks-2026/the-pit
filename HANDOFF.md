@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Scaling] place_order no longer slows down with history, Claude Code -> next
+Branch: main
+Done: Module reads only open orders (btree index on order.status), only the caller's and resting-order owners' accounts/positions, and keeps the last trade price in a private market_state table. Benchmark (apps/runner/src/history-bench.ts, docs/LOAD_TEST.md): p50 at 50k historical orders 15.3 ms -> 1.3 ms; flat to 100k. In-place upgrade over a 50k-order database tested (no data loss); audit passed; all three live acceptance tests passed locally.
+Not done / next: Publish to Maincloud (Shafir, the database owner): `spacetime publish the-pit-mhacks-2026 --module-path spacetimedb/spacetimedb --server maincloud` WITHOUT --delete-data (check the server nickname with `spacetime server list`). Team call on timing vs the 6 AM freeze. Bindings were not regenerated (market_state is private; clients need no change).
+Gotchas: My local `spacetime generate` also emits private-table types (IdCounter, MarketState) that the committed bindings omit, so I reverted it; regenerate on the usual machine if needed. The first order after the upgrade rebuilds market_state from the trade table once.
+How to verify: pnpm test && pnpm build; see the Reproduce section in docs/LOAD_TEST.md
+Files touched: spacetimedb/spacetimedb/src/index.ts, apps/runner/src/history-bench.ts, docs/LOAD_TEST.md, HANDOFF.md
+
+---
+
 ## [T31 alt] News strategy for the adaptive AI, Claude Code -> next
 Branch: main
 Done: worldNews now posts "Delayed estimate: HACK fair value about N." (same 5 s delay, +/-5 noise, same single rng draw); parseNewsHint reads it (old firm/softer lines give null). Fifth arm 'news' trades toward a fresh hint far enough from the mid. runSession simulates news (own rng; event log unchanged). Retrained on 30 days of data (572 paths): held out -30 with news, -39 without, -202 untrained, 0 flat, news alone -2; 0 Cop alerts. Arms can be switched off via AdaptiveParams.arms.
