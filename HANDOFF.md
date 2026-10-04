@@ -16,9 +16,9 @@ Files touched: <list>
 ---
 
 ## [Backend verification] 04:20 CEST, Codex -> next
-Branch: main (acceptance 7f1ae91, audit de35931, load 0c2141f pushed; CI workflow prepared)
+Branch: main (acceptance 7f1ae91, audit de35931, load 0c2141f, CI 06cdd9c pushed)
 Done: Added a one-command localhost acceptance run with a temporary SpacetimeDB server and runner. It uses a localhost-issued admin token in an isolated CLI config, tests exchange writes, admin authorization and Cop evidence, audits balances/orders/events, and removes temporary credentials. A read-only audit passed on Maincloud (11 accounts, ~26.8k orders, ~6.7k trades, ~53.6k events, 5 alerts). A 20-client disposable load run with five bots completed 200 IOC orders (p95 28 ms on a fresh database) and passed the post-load audit. Added a Windows GitHub Actions workflow with a pinned, checksum-verified SpacetimeDB binary and no secrets.
-Not done / next: Confirm the first hosted CI run, then require `Backend checks / verify` in branch protection. T28 remains open for reconnect handling and production-sized history measurement. No matching-rule or schema changes were made.
+Not done / next: T28 remains open for reconnect handling and production-sized history measurement. No matching-rule or schema changes were made. First hosted `Backend checks / verify` run passed. GitHub refused both branch protection and rulesets on this private repository with a `403` requiring GitHub Pro or a public repository, so the team must manually review the check before merging.
 Gotchas: Fresh-database latency is not a production capacity estimate. The live Windows runner was not restarted. The test script requires free localhost port 3000.
 How to verify: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-local-integration.ps1 -Load`; `pnpm test`; `pnpm build`.
 Files touched: scripts/test-local-integration.ps1, apps/runner/src/{audit,audit-cli,load-test}.ts, their tests, three live acceptance tests, docs/{CLI,LOAD_TEST}.md, .github/workflows/backend.yml, HANDOFF.md.
