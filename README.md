@@ -62,7 +62,7 @@ Every number comes from a script in this repository; the commands are in [Evalua
 
 **On the Big Screen (`/screen`)**
 - Live **price chart, order book ladder, depth chart, trade tape, leaderboard** (every trader wears a jacket badge; bots wear outlined badges), and a scrolling ticker.
-- **Market Cop desk**: each alert arrives as a citation ticket with its evidence, a police-tape band sweeps across the screen, and the Cop **reads the alert aloud with ElevenLabs** (browser voice as a fallback).
+- **Market Cop desk**: each alert arrives as a citation ticket with its evidence. The **Hear alert** control plays an ElevenLabs voice when configured.
 - **Record sealed** line: the live head of the tamper-evident event chain.
 - **The Cop's eyes on live BTC**: real BTC/USD order flow from Bitstamp's public feed, with the warning signs the Cop looks for (orders cancelled without trading, "flash orders" that appear near the price and vanish within seconds).
 
@@ -172,7 +172,7 @@ Key documents: [`docs/spec.md`](docs/spec.md) (contract between modules), [`docs
 | SpacetimeDB CLI | 2.10.2 | Install from [spacetimedb.com/install](https://spacetimedb.com/install); provides `spacetime start`, `publish`, `call`, `sql`, `generate` |
 | Git | any recent | |
 
-Optional: an ElevenLabs API key with the **Text to Speech** permission (voice), an Anthropic API key (LLM narration). Without them, the app uses the browser voice and template narration.
+Optional: an ElevenLabs API key with the **Text to Speech** permission (voice), an Anthropic API key (LLM narration). Without them, the app keeps template narration text; audio is unavailable.
 
 ### Install, test and build
 
@@ -230,10 +230,10 @@ Names are listed in [`.env.example`](.env.example). Real values live in Vercel a
 | `NEXT_PUBLIC_SPACETIME_URI` | Web | SpacetimeDB WebSocket address. Production must use `wss://` (e.g. `wss://maincloud.spacetimedb.com`) |
 | `NEXT_PUBLIC_SPACETIME_DB` | Web | Database name (production: `the-pit-mhacks-2026`) |
 | `ELEVENLABS_API_KEY` | Web server only | Cop voice. Needs the Text to Speech permission. Never prefix with `NEXT_PUBLIC_` |
-| `ELEVENLABS_VOICE_ID` | Web server only | Optional; default is ElevenLabs' premade "Daniel" voice |
+| `ELEVENLABS_VOICE_ID` | Web server only | Optional; default is ElevenLabs' premade male "Daniel" voice. `/screen` plays an alert only after someone selects **Hear alert** |
 | `ELEVENLABS_MODEL_ID` | Web server only | Optional; default `eleven_flash_v2_5` (low latency) |
 | `LLM_API_KEY` | Web server only | Optional Anthropic key; narration is rewritten by Claude but only accepted if every number in it appears in the evidence |
-| `NARRATOR_ENABLED` | Web server only | Kill switch: `false` turns off the LLM and ElevenLabs calls (template text and browser voice remain) |
+| `NARRATOR_ENABLED` | Web server only | Kill switch: `false` turns off the LLM and ElevenLabs calls; template text remains |
 | `NEXT_PUBLIC_MARKET_WATCH` | Web | `false` hides the live BTC panel |
 | `ADMIN_TOKEN`, `PIT_*` | Legacy runner and tests | Only for `apps/runner` (see [`docs/RUNNER.md`](docs/RUNNER.md)) |
 

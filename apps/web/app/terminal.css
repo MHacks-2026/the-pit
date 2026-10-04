@@ -180,6 +180,12 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
 .terminal-dashboard .cop-focus { border-left: 2px solid var(--cop); padding-left: 14px; }
 .terminal-dashboard .cop-focus h3 { margin: 12px 0 8px; font-size: 26px; }
 .terminal-dashboard .cop-sequence { font-size: 17px; }
+.cop-voice { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.cop-voice button { border: 1px solid var(--cop); border-radius: 5px; padding: 8px 12px; background: transparent; color: var(--cop); cursor: pointer; font-size: 12px; font-weight: 700; }
+.cop-voice button:hover { background: rgba(230, 173, 85, .12); }
+.cop-voice button:disabled { opacity: .6; cursor: wait; }
+.cop-voice audio { max-width: min(100%, 260px); height: 32px; }
+.cop-voice span { color: var(--muted); font-size: 12px; }
 .terminal-dashboard .cop-recent { margin-top: 0; padding-left: 16px; border-left: 1px solid var(--line); }
 .terminal-dashboard .cop-recent li button { padding: 8px 4px; }
 .terminal-dashboard .cop-recent li button[aria-pressed="true"] { background: #183038; }

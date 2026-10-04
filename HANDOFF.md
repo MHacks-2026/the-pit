@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [ElevenLabs voice] 17:25 CEST, Codex -> team
+Branch: feature/elevenlabs-voice (pending push)
+Done: Validated the new account key with ElevenLabs, selected its male Daniel broadcaster voice, and generated a short private sample. Added a server-only `/api/speech` route with input limits, per-instance rate limit, audio cache, provider timeout, and a configuration check. Added **Hear alert** on the Market Cop screen; it appears only when voice is configured. Added four speech tests and updated env/README docs. Local app returned MP3 audio; 125 active tests and full workspace build passed. The key lives only in ignored `apps/web/.env.local` and is absent from Git.
+Not done / next: Replace Vercel production `ELEVENLABS_API_KEY`, set `ELEVENLABS_VOICE_ID=onwK4e9ZLuTAKqWW03F9`, then deploy the branch to main and test the live button. The connected Vercel account does not have access to the-pit; awaiting the project owner’s access route.
+Gotchas: No browser session is available to edit Vercel. The local MP3 sample is under ignored `.tools`.
+How to verify: `pnpm test`, `pnpm build`; set server env vars, open `/screen`, select an alert, and press **Hear alert**.
+Files touched: .gitignore, .env.example, README.md, apps/web/app/api/speech/route.ts, apps/web/lib/speech.ts and test, apps/web/app/screen/AlertFeed.tsx, apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
 ## [UI title size] 16:59 CEST, Codex -> team
 Branch: main (pending push)
 Done: Doubled THE PIT header title from 32–42px to 64–84px on desktop and from 28px to 56px on phones. Kept its /screen link and QR layout. All 121 active tests and full workspace build passed.
