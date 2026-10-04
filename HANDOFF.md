@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [D9/D10/T24 deployment] 12:40 CEST, Codex -> team
+Branch: main (module revision 58719bd published to Maincloud)
+Done: Pulled latest main; 119 unit tests passed, full build passed with SpacetimeDB CLI 2.10.2, and disposable database acceptance and audit passed. Stopped Shafir's `ThePitCloudRunner` task. Published the module in place to `the-pit-mhacks-2026` without `--delete-data`, then called `admin_bots_start true`. Verified one `bot_tick_schedule` row, one `sim_state` row, 11 bot accounts including the six new database bots, and continued event/news growth (117,579 to 117,881 events; 4,293 to 4,297 news). The desktop task is Ready/stopped. The new event chain has 478 links; earlier events predate the chain.
+Not done / next: Do not restart the desktop runner while database bots are active. Run `admin_reset_market 1` only when judges arrive: it deletes orders, trades, positions, event log, news, alerts, and human accounts. Team should check `/screen`, `/trade`, and the cheat alert flow in browsers.
+Gotchas: `admin_reset_market` is a destructive market reset, not a cache clear. Rollback bots via `admin_bots_stop`, then start the desktop task.
+How to verify: `spacetime sql the-pit-mhacks-2026 'SELECT COUNT(*) FROM bot_tick_schedule' --server maincloud`; check event/news growth and `Get-ScheduledTask ThePitCloudRunner`.
+Files touched: HANDOFF.md only; live SpacetimeDB module and schedule changed.
+
+---
+
 ## [D10] Tamper-evident market record, Claude Code -> next
 Branch: main (module change NOT yet published to Maincloud)
 Done: packages/cop/src/chain.ts: pure SHA-256 (NIST vectors + Node crypto cross-check), canonicalEvent, chainHash, verifyChain. Module: public event_chain + chain_head; every event_log insert appends a link in the same transaction; admin_reset_market writes a reset:<id> marker that links to the old head. audit-cli verifies the chain. /screen alert feed shows "Market record sealed: N linked events · head …". Bindings regenerated (also adds admin_bots_start/stop). Local: in-place upgrade from the previous module worked (old events counted as before-the-chain); hand-edited and hand-deleted events were reported as CHAIN_EVENT_ALTERED / CHAIN_EVENT_MISSING; reset + audit passes.
