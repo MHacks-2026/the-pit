@@ -1,4 +1,4 @@
-import { narrationFacts, templateNarration, type NarrateAlert } from './narrator';
+import type { NarrateAlert } from './narrator';
 
 const MAX_AUDIO_BYTES = 1_000_000;
 const REQUESTS_PER_MINUTE = 12;
@@ -8,6 +8,11 @@ export const DEFAULT_VOICE_ID = 'nPczCjzI2devNBz1zQrb';
 export const DEFAULT_MODEL_ID = 'eleven_flash_v2_5';
 /** Steady, calm delivery: a little expressive range, no exaggerated style. */
 export const VOICE_SETTINGS = { stability: 0.6, similarity_boost: 0.8, style: 0, use_speaker_boost: true };
+
+/** The one sentence the Cop speaks for every alert. The name is already sanitised by parseNarrateAlert. */
+export function spokenAlert(trader: string): string {
+  return `Manipulation detected: check ${trader}.`;
+}
 
 export type SpeechResult =
   | { status: 200; audio: Uint8Array }
@@ -28,7 +33,7 @@ export function createSpeech(deps: {
     if (!deps.enabled || !deps.apiKey) return { status: 503 };
     const voiceId = deps.voiceId || DEFAULT_VOICE_ID;
     const modelId = deps.modelId || DEFAULT_MODEL_ID;
-    const text = templateNarration(narrationFacts(alert));
+    const text = spokenAlert(alert.trader);
     const cacheKey = `${voiceId}:${modelId}:${text}`;
     const cached = cache.get(cacheKey);
     if (cached) return { status: 200, audio: cached };

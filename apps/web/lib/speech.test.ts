@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createSpeech, DEFAULT_VOICE_ID, VOICE_SETTINGS } from './speech';
+import { createSpeech, DEFAULT_VOICE_ID, spokenAlert, VOICE_SETTINGS } from './speech';
 
 const alert = { kind: 'spoofing', score: 90, trader: 'Raj', evidence: {
   layerSide: 'sell', layerOrderIds: [1, 2, 3, 4], totalLayeredQty: 80, cancelledQty: 80,
 } };
+
+describe('spokenAlert', () => {
+  it('is the same short sentence for every alert', () => {
+    expect(spokenAlert('Steve')).toBe('Manipulation detected: check Steve.');
+  });
+});
 
 describe('createSpeech', () => {
   it('keeps the API key server-side, uses the configured voice, and caches identical audio', async () => {
@@ -16,7 +22,7 @@ describe('createSpeech', () => {
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain('/text-to-speech/daniel');
     expect(init.headers).toMatchObject({ 'xi-api-key': 'test-key' });
-    expect(JSON.parse(init.body as string).text).toContain('4 sell orders layered');
+    expect(JSON.parse(init.body as string).text).toBe('Manipulation detected: check Raj.');
     expect(JSON.parse(init.body as string).voice_settings).toEqual(VOICE_SETTINGS);
   });
 

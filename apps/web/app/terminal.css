@@ -185,6 +185,9 @@ footer { margin-top: 16px; font-size: 11px; color: var(--muted); }
 .cop-voice button { border: 1px solid var(--cop); border-radius: 5px; padding: 8px 12px; background: transparent; color: var(--cop); cursor: pointer; font-size: 12px; font-weight: 700; }
 .cop-voice button:hover { background: rgba(230, 173, 85, .12); }
 .cop-voice button:disabled { opacity: .6; cursor: wait; }
+.cop-voice button[aria-pressed="true"] { background: rgba(230, 173, 85, .12); }
+.cop-voice button[aria-pressed="false"] { border-color: var(--line); color: var(--muted); }
+.cop-voice .cop-voice-enable { background: var(--cop); color: var(--bg); }
 .cop-voice audio { max-width: min(100%, 260px); height: 32px; }
 .cop-voice span { color: var(--muted); font-size: 12px; }
 .terminal-dashboard .cop-recent { margin-top: 0; padding-left: 16px; border-left: 1px solid var(--line); }

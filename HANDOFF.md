@@ -15,6 +15,16 @@ Files touched: <list>
 
 ---
 
+## [Cop voice auto] 12:10 CEST, Claude Code -> team
+Branch: main (pushed)
+Done: The Cop now speaks automatically on /screen. Every spoken alert is exactly "Manipulation detected: check <name>." (spokenAlert in lib/speech.ts). Only alerts that arrive after page load are spoken, one clip at a time, newest wins if several queue, and the same trader is not repeated within 15 s. Browsers need one click before audio: the Cop panel shows "Click to enable voice" until then (any click or key on the page unlocks it), then a Voice on/off toggle. Hear alert replays the current case. On-screen text and the phone citation card are unchanged. 127 tests and the build pass.
+Not done / next: Check on the venue machine: click /screen once at the start of the demo, then run the cheat from a phone.
+Gotchas: The fixed sentence means repeats for the same name come from the server audio cache (no ElevenLabs credit). Refreshing the page re-locks audio until the next click.
+How to verify: Open /screen, click once, trigger a spoof from /trade, and listen.
+Files touched: apps/web/lib/speech{,.test}.ts, apps/web/app/screen/AlertFeed.tsx, apps/web/app/terminal.css, HANDOFF.md.
+
+---
+
 ## [ElevenLabs voice merge] 11:50 CEST, Claude Code -> team
 Branch: main (pushed)
 Done: Merged feature/elevenlabs-voice into main, on top of the 3D X-ray. Switched the default Cop voice from Daniel to ElevenLabs premade "Brian" (nPczCjzI2devNBz1zQrb, deep and warm American male) with steady voice_settings. An unset or empty ELEVENLABS_VOICE_ID now falls back to Brian (was `??`, so an empty value broke the call). Playback stays button-only ("Hear alert"). 126 tests and the full build pass.
