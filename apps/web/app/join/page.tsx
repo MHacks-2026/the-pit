@@ -9,7 +9,7 @@ export default function Join() {
           <h1>THE PIT</h1>
           <p className="subtitle">Enter a name and join the living exchange.</p>
         </div>
-        <div className="live-pill"><span className="live-dot" /> LIVE MARKET</div>
+        <div className="live-pill"><span className="live-dot" /> Live</div>
       </header>
       <section className="feed-shell" aria-labelledby="join-heading">
         <div className="feed-heading">

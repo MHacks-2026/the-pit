@@ -10,9 +10,9 @@ export default function Screen() {
           <h1>THE PIT</h1>
           <p className="subtitle">A living exchange. A watchful market cop.</p>
         </div>
-        <div className="live-pill"><span className="live-dot" /> LIVE MARKET</div>
+        <div className="live-pill"><span className="live-dot" /> Live</div>
       </header>
-      <section className="feed-shell" aria-labelledby="market-heading">
+      <section className="feed-shell feed-open" aria-labelledby="market-heading">
         <div className="feed-heading">
           <div>
             <p className="eyebrow">Trading floor</p>
@@ -22,7 +22,7 @@ export default function Screen() {
         </div>
         <MarketBoard />
       </section>
-      <section className="feed-shell" aria-labelledby="join-heading">
+      <section className="feed-shell feed-open" aria-labelledby="join-heading">
         <div className="join-card">
           <div className="join-qr-frame">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,7 +41,7 @@ export default function Screen() {
           </div>
         </div>
       </section>
-      <section className="feed-shell" aria-labelledby="alerts-heading">
+      <section className="feed-shell feed-open" aria-labelledby="alerts-heading">
         <div className="feed-heading">
           <div>
             <p className="eyebrow">Surveillance desk</p>
